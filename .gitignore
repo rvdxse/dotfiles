@@ -1,0 +1,7 @@
+*.bak
+*.toml-[0-9]*
+.mypy_cache/
+__pycache__/
+*~
+*.swp
+*-1762*
