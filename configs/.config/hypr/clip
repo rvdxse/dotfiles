@@ -1,0 +1,15 @@
+#!/bin/bash
+tmp_dir="/tmp/cliphist_previews"
+mkdir -p "$tmp_dir"
+
+# Генерируем список с иконками
+cliphist list | while read -r line; do
+    id=$(echo "$line" | cut -f1)
+    if echo "$line" | grep -q "[[ binary data"; then
+        icon_path="$tmp_dir/$id.png"
+        [ ! -f "$icon_path" ] && cliphist decode "$id" > "$icon_path"
+        echo -en "$line\0icon\x1f$icon_path\n"
+    else
+        echo -en "$line\n"
+    fi
+done | rofi -dmenu -i -display-columns 2 -theme-str 'configuration {show-icons: true;} element-icon { size: 5ch; }' | cliphist decode | wl-copy

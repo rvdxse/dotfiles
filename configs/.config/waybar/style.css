@@ -1,0 +1,201 @@
+@import "mocha.css";
+@import "/home/rvdxse/.cache/wal/colors-waybar.css";
+
+* {
+  font-family: "FiraCode Nerd Font", monospace;
+  font-size: 16px;
+  min-height: 0;
+}
+
+#waybar {
+  /*background-color: @color0;*/
+  background: transparent;
+  color: @cursor;
+  margin: 5px 5px;
+}
+
+#workspaces {
+  border-radius: 1rem;
+  margin: 5px;
+  background-color: alpha(@color0, 0.5);
+  margin-left: 1rem;
+  padding: 0px 12px 0px 5px;
+}
+
+#window {
+  border-radius: 0px 1rem 1rem 0px;
+}
+
+#workspaces button {
+  color: @lavender;
+  border-radius: 1rem;
+  padding: 0.4rem;
+}
+
+#workspaces button.active {
+  color: @sky;
+  border-radius: 1rem;
+}
+
+#workspaces button:hover {
+  color: @sapphire;
+  border-radius: 1rem;
+}
+
+#window,
+#custom-music,
+#mpris,
+#network,
+#tray,
+#custom-activewindow,
+#backlight,
+#clock,
+#battery,
+#pulseaudio-slider,
+#custom-applauncher,
+#temperature,
+#pulseaudio,
+#cpu,
+#bluetooth,
+#idle_inhibitor,
+#custom-lock,
+#custom-updates,
+#power-profiles-daemon,
+#custom-power {
+  background-color: alpha(@color0, 0.5);
+  padding: 0.5rem 1rem;
+  margin: 5px 0;
+}
+
+#clock {
+  color: @blue;
+  border-radius: 0px 1rem 1rem 0px;
+  margin-right: 1rem;
+}
+
+#temperature {
+  color: @yellow;
+}
+
+#cpu {
+  color: @yellow;
+}
+
+#battery {
+  color: @green;
+}
+
+#battery.charging {
+  color: @green;
+}
+
+battery.warning:not(.charging) {
+  color: @red;
+}
+
+#backlight {
+  color: @yellow;
+}
+
+#idle_inhibitor {
+  border-radius: 1rem;
+  margin-right: 1rem;
+  padding: 0px 20px 0px 13px;
+}
+
+#backlight,
+#battery {
+  border-radius: 0;
+}
+
+#pulseaudio {
+  color: @maroon;
+  border-radius: 1rem 0px 0px 1rem;
+  margin-left: 1rem;
+}
+
+#custom-activewindow {
+  border-radius: 0px 1rem 1rem 0px;
+}
+
+#power-profiles-daemon {
+  border-radius: 0px 1rem 1rem 0px;
+}
+
+#custom-applauncher {
+  font-weight: bold;
+  transition-duration: 120ms;
+  border-radius: 1rem 0px 0px 1rem;
+}
+
+#custom-applauncher:hover {
+  background-image: linear-gradient(to bottom, @cursor 100%);
+  color: #141216;
+  transition-duration: 120ms;
+}
+
+#language {
+  background-color: alpha(@color0, 0.5);
+  margin: 5px 0px;
+  padding-left: 1rem;
+  border-radius: 1rem 0px 0px 1rem;
+}
+
+#mpris,
+#custom-music {
+  color: @mauve;
+  border-radius: 1rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+
+}
+
+#custom-music.paused {
+  color: @maroon;
+}
+
+#custom-updates {
+  background-color: alpha(@color0, 0.5);
+  color: @peach;
+  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+  margin-left: 1rem;
+}
+
+#custom-lock {
+  border-radius: 1rem 0px 0px 1rem;
+  color: @lavender;
+}
+
+#custom-power {
+  margin-right: 1rem;
+  border-radius: 0px 1rem 1rem 0px;
+  color: @red;
+}
+
+#tray {
+  margin-right: 1rem;
+  border-radius: 0px 1rem 1rem 0px;
+}
+
+#pulseaudio-slider {
+  padding: 0 7px 0 2px;
+}
+
+slider {
+  opacity: 0;
+  box-shadow: none;
+}
+
+trough {
+  min-width: 50px;
+  min-height: 5px;
+  border-radius: 8px;
+  background: @inactive;
+}
+
+trough highlight {
+  border-radius: 8px;
+  background-color: @fg;
+  background-image: none;
+}

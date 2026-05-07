@@ -1,0 +1,690 @@
+#!/bin/bash
+
+# aurora — unified package manager helper for Arch Linux
+# Usage: aurora <command> [--dry-run]
+# Commands: system-update, pacman-search, pacman-remove, yay-search, yay-remove,
+#           flatpak-search, flatpak-remove, pacman-orphans, pacman-cache, system-info
+
+# ─── Lock file ────────────────────────────────────────────────────────────────
+
+LOCK_FILE="/tmp/aurora.lock"
+
+_acquire_lock() {
+  if [[ -e "$LOCK_FILE" ]]; then
+    local lock_pid
+    lock_pid=$(cat "$LOCK_FILE" 2>/dev/null)
+    if kill -0 "$lock_pid" 2>/dev/null; then
+      echo "❌ aurora is already running (PID $lock_pid). Aborting."
+      exit 1
+    else
+      # Stale lock
+      rm -f "$LOCK_FILE"
+    fi
+  fi
+  echo $$ >"$LOCK_FILE"
+}
+
+_release_lock() {
+  rm -f "$LOCK_FILE"
+}
+
+trap _release_lock EXIT
+
+# ─── Flags ────────────────────────────────────────────────────────────────────
+
+DRY_RUN=false
+for arg in "$@"; do
+  [[ "$arg" == "--dry-run" || "$arg" == "-n" ]] && DRY_RUN=true
+done
+
+_dry_echo() {
+  # Print command instead of running it in dry-run mode
+  echo "  [dry-run] $*"
+}
+
+_run() {
+  if $DRY_RUN; then
+    _dry_echo "$@"
+  else
+    "$@"
+  fi
+}
+
+# ─── Colors ───────────────────────────────────────────────────────────────────
+
+if [[ -t 1 ]] && command -v tput &>/dev/null && tput colors &>/dev/null; then
+  C_RESET=$(tput sgr0)
+  C_BOLD=$(tput bold)
+  C_GREEN=$(tput setaf 2)
+  C_YELLOW=$(tput setaf 3)
+  C_CYAN=$(tput setaf 6)
+  C_RED=$(tput setaf 1)
+  C_DIM=$(tput dim 2>/dev/null || echo "")
+else
+  C_RESET="" C_BOLD="" C_GREEN="" C_YELLOW="" C_CYAN="" C_RED="" C_DIM=""
+fi
+
+_info() { echo "${C_CYAN}${C_BOLD}$*${C_RESET}"; }
+_success() { echo "${C_GREEN}✅ $*${C_RESET}"; }
+_warn() { echo "${C_YELLOW}⚠️  $*${C_RESET}"; }
+_error() { echo "${C_RED}❌ $*${C_RESET}"; }
+_dim() { echo "${C_DIM}$*${C_RESET}"; }
+_sep() { echo "${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"; }
+
+# ─── UI helpers ───────────────────────────────────────────────────────────────
+
+_spinner_start() {
+  local spin_chars=('🌍' '🌎' '🌏')
+  local i=0
+  while :; do
+    printf "\r[ %s ] Press any key to continue..." "${spin_chars[i++%3]}"
+    sleep 0.2
+  done
+}
+
+_spinner_stop() {
+  kill "$1" 2>/dev/null
+  printf "\r%*s\r" "$(tput cols)" ""
+}
+
+post_success_message() {
+  local message="${1:-Operation Succeeded}"
+  _sep
+  _success "$message"
+  local pid
+  _spinner_start &
+  #pid=$(_spinner_start)
+  local spinner_pid=$!
+  read -r -n 1 -s
+  kill "$spinner_pid" 2>/dev/null
+  printf "\r%*s\r" "$(tput cols)" ""
+  echo
+  echo
+}
+
+_confirm_or_abort() {
+  local prompt="${1:-Continue?}"
+  read -r -p "${C_YELLOW}${prompt}${C_RESET} [Enter to continue / Ctrl+C to abort] "
+}
+
+# ─── Disk space check ─────────────────────────────────────────────────────────
+
+_check_disk_space() {
+  local min_mb="${1:-500}"
+  local mount="${2:-/}"
+  local avail_mb
+  avail_mb=$(df -m "$mount" | awk 'NR==2 {print $4}')
+
+  if ((avail_mb < min_mb)); then
+    _error "Only ${avail_mb}MB free on ${mount}. Need at least ${min_mb}MB to update safely."
+    _confirm_or_abort "Continue anyway?"
+  else
+    _dim "  Disk space OK: ${avail_mb}MB free on ${mount}"
+  fi
+}
+
+# ─── Installed package sets (for [installed] markers) ─────────────────────────
+
+_get_installed_pacman() {
+  pacman -Qq 2>/dev/null | sort
+}
+
+_get_installed_flatpak() {
+  flatpak list --app --columns=application 2>/dev/null | sort
+}
+
+# ─── Generic fzf picker ───────────────────────────────────────────────────────
+
+# _fzf_pick <header> <list_cmd> <preview_cmd> [extra_fzf_args...]
+_fzf_pick() {
+  local header="$1"
+  local list_cmd="$2"
+  local preview_cmd="$3"
+  shift 3
+
+  local selected
+  selected=$(eval "$list_cmd" | fzf \
+    --multi \
+    --preview "$preview_cmd" \
+    --preview-label="${C_DIM}alt-p: toggle | alt-j/k: scroll | Tab: multi-select${C_RESET}" \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --bind='alt-d:preview-half-page-down,alt-u:preview-half-page-up' \
+    --bind='alt-k:preview-up,alt-j:preview-down' \
+    --color='pointer:green,marker:green,header:cyan' \
+    --header="$header" \
+    "$@")
+
+  if [[ -z "$selected" ]]; then
+    echo "No packages selected or search cancelled."
+    return 1
+  fi
+
+  echo "$selected"
+}
+
+_run_or_fail() {
+  local success_msg="$1"
+  shift
+  if "$@"; then
+    post_success_message "$success_msg"
+  else
+    _sep
+    _error "Command failed. Check output above."
+    read -r -p "Press Enter to continue..."
+    return 1
+  fi
+}
+
+# ─── system-update ────────────────────────────────────────────────────────────
+
+system-update() {
+  $DRY_RUN && _warn "DRY-RUN mode — no changes will be made"
+
+  _info "Checking for updates..."
+
+  local pacman_list yay_list flatpak_list
+  pacman_list=$(checkupdates 2>/dev/null)
+  yay_list=$(yay -Qu --aur 2>/dev/null)
+  flatpak_list=$(flatpak remote-ls --updates 2>/dev/null)
+
+  local pacman_updates=0 yay_updates=0 flatpak_updates=0
+  [[ -n "$pacman_list" ]] && pacman_updates=$(wc -l <<<"$pacman_list")
+  [[ -n "$yay_list" ]] && yay_updates=$(wc -l <<<"$yay_list")
+  [[ -n "$flatpak_list" ]] && flatpak_updates=$(wc -l <<<"$flatpak_list")
+
+  local total_updates=$((pacman_updates + yay_updates + flatpak_updates))
+
+  _sep
+  printf " ${C_BOLD}󰮯 Pacman${C_RESET}  : %s\n" "$pacman_updates"
+  printf " ${C_BOLD}󰣇 AUR${C_RESET}     : %s\n" "$yay_updates"
+  printf " ${C_BOLD}󰏖 Flatpak${C_RESET} : %s\n" "$flatpak_updates"
+  _dim "  ───────────────────────────"
+  printf "   ${C_BOLD}Total${C_RESET}   : ${C_YELLOW}%s${C_RESET}\n" "$total_updates"
+  _sep
+
+  if ((total_updates == 0)); then
+    post_success_message "All packages are up-to-date."
+    return 0
+  fi
+
+  # Show package lists
+  if ((pacman_updates > 0)); then
+    echo ""
+    _info "Pacman packages:"
+    echo "$pacman_list" | awk "{printf \"  ${C_DIM}%s${C_RESET}  %s → ${C_GREEN}%s${C_RESET}\n\", \$1, \$2, \$4}"
+  fi
+  if ((yay_updates > 0)); then
+    echo ""
+    _info "AUR packages:"
+    echo "$yay_list" | awk "{printf \"  ${C_DIM}%s${C_RESET}  %s → ${C_GREEN}%s${C_RESET}\n\", \$1, \$2, \$4}"
+  fi
+  if ((flatpak_updates > 0)); then
+    echo ""
+    _info "Flatpak apps:"
+    echo "$flatpak_list" | awk "{printf \"  ${C_DIM}%s${C_RESET}\n\", \$1}"
+  fi
+
+  echo ""
+
+  if $DRY_RUN; then
+    _warn "Dry-run complete. The following commands would be executed:"
+    ((pacman_updates > 0)) && _dry_echo "sudo pacman -Syu --noconfirm"
+    ((yay_updates > 0)) && _dry_echo "yay -Syu --aur --noconfirm"
+    ((flatpak_updates > 0)) && _dry_echo "flatpak update -y"
+    return 0
+  fi
+
+  _check_disk_space 500 /
+
+  _confirm_or_abort "Ready to update ${C_YELLOW}${total_updates}${C_RESET} package(s)?"
+
+  if ((pacman_updates > 0)); then
+    _sep
+    _info "🚀 Updating pacman packages..."
+    sudo pacman -Syu --noconfirm || {
+      _error "pacman update failed"
+      return 1
+    }
+  fi
+
+  if ((yay_updates > 0)); then
+    _sep
+    _info "🚀 Updating AUR packages via yay..."
+    sudo echo ""
+    yay -Syu --aur --noconfirm || {
+      _error "yay update failed"
+      return 1
+    }
+  fi
+
+  if ((flatpak_updates > 0)); then
+    _sep
+    _info "🚀 Updating Flatpak packages..."
+    flatpak update -y || {
+      _error "flatpak update failed"
+      return 1
+    }
+  fi
+
+  post_success_message "🎉 All updates finished!"
+
+  # Refresh waybar cache
+  command -v update-checker &>/dev/null && update-checker --refresh &>/dev/null &
+}
+
+# ─── pacman ───────────────────────────────────────────────────────────────────
+
+pacman-search() {
+  _info "Loading pacman package list..."
+
+  # Build list with [installed] markers
+  local installed
+  installed=$(_get_installed_pacman)
+
+  local list
+  list=$(pacman -Sl | awk '!seen[$2]++ {print $2}' |
+    awk -v inst="$installed" '
+        BEGIN { split(inst, a, "\n"); for (i in a) installed[a[i]]=1 }
+        { if ($1 in installed) print $1 "  \033[32m[installed]\033[0m"; else print $1 }
+    ')
+
+  local selected
+  selected=$(echo "$list" | fzf \
+    --multi \
+    --ansi \
+    --preview 'pacman -Si {1}' \
+    --preview-label='alt-p: toggle | alt-o: open URL | alt-j/k: scroll | Tab: multi-select' \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --bind='alt-o:execute-silent(url=$(pacman -Si {1} | awk "/URL/ {print \$3}"); [ -n "$url" ] && xdg-open "$url" &>/dev/null)' \
+    --bind='alt-d:preview-half-page-down,alt-u:preview-half-page-up' \
+    --bind='alt-k:preview-up,alt-j:preview-down' \
+    --color='pointer:green,marker:green' \
+    --header="Search and Select Pacman Packages  [alt-o: open URL]") || {
+    echo "No packages selected."
+    return 0
+  }
+
+  # Strip [installed] marker to get clean names
+  selected=$(echo "$selected" | awk '{print $1}')
+
+  _sep
+  _info "Installing: $selected"
+  _run_or_fail "pacman packages installed" \
+    bash -c "echo '$selected' | xargs -r sudo pacman -S --needed --noconfirm"
+}
+
+pacman-remove() {
+  local selected
+  selected=$(_fzf_pick \
+    "Select Packages to Remove (pacman)" \
+    "pacman -Qqe" \
+    "pacman -Qi {}") || return 0
+
+  _sep
+  _warn "Packages to remove: $selected"
+  echo ""
+  echo "Will also remove these dependencies:"
+  echo "$selected" | xargs pacman -Rns --print 2>/dev/null | grep "removing" |
+    awk "{print \"  ${C_DIM}\" \$2 \"${C_RESET}\"}" || _dim "  (none)"
+
+  _confirm_or_abort "This will remove the listed packages and their unused deps."
+
+  _run_or_fail "pacman packages removed" \
+    bash -c "echo '$selected' | xargs -r sudo pacman -Rns --noconfirm"
+}
+
+# ─── yay / AUR ────────────────────────────────────────────────────────────────
+
+yay-search() {
+  _info "Loading AUR package list (may take a moment)..."
+
+  local installed
+  installed=$(_get_installed_pacman)
+
+  local selected
+  selected=$(yay -Slq --aur |
+    awk -v inst="$installed" '
+        BEGIN { split(inst, a, "\n"); for (i in a) installed[a[i]]=1 }
+        { if ($1 in installed) print $1 "  \033[32m[installed]\033[0m"; else print $1 }
+    ' | fzf \
+    --multi \
+    --ansi \
+    --preview 'yay -Siia {1}' \
+    --preview-label='alt-p: info | alt-b: PKGBUILD | alt-o: AUR page | Tab: multi-select' \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --bind='alt-b:change-preview:yay -Gpa {1} | tail -n +5' \
+    --bind='alt-B:change-preview:yay -Siia {1}' \
+    --bind='alt-o:execute-silent(xdg-open "https://aur.archlinux.org/packages/{1}" &>/dev/null)' \
+    --bind='alt-d:preview-half-page-down,alt-u:preview-half-page-up' \
+    --bind='alt-k:preview-up,alt-j:preview-down' \
+    --color='pointer:green,marker:green' \
+    --header="Search AUR Packages  [alt-b: PKGBUILD | alt-o: AUR page]") || {
+    echo "No packages selected."
+    return 0
+  }
+
+  selected=$(echo "$selected" | awk '{print $1}')
+
+  _sep
+  _info "Installing from AUR: $selected"
+  _run_or_fail "AUR packages installed" \
+    bash -c "echo '$selected' | xargs -r yay -S --needed --noconfirm"
+}
+
+yay-remove() {
+  local selected
+  selected=$(yay -Qm | awk '{print $1}' | fzf \
+    --multi \
+    --preview 'yay -Qi {}' \
+    --preview-label='alt-p: toggle | Tab: multi-select' \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --color='pointer:green,marker:green' \
+    --header="Select AUR Packages to Remove") || {
+    echo "No packages selected."
+    return 0
+  }
+
+  _sep
+  _warn "AUR packages to remove: $selected"
+  _confirm_or_abort "Confirm removal?"
+
+  _run_or_fail "AUR packages removed" \
+    bash -c "echo '$selected' | xargs -r sudo pacman -Rns --noconfirm"
+}
+
+# ─── flatpak ──────────────────────────────────────────────────────────────────
+
+flatpak-search() {
+  _info "Loading Flathub package list..."
+
+  local installed_fp
+  installed_fp=$(_get_installed_flatpak)
+
+  local selected
+  selected=$(flatpak remote-ls --user flathub --columns=name,application 2>/dev/null |
+    awk -v inst="$installed_fp" '
+        BEGIN { split(inst, a, "\n"); for (i in a) installed[a[i]]=1 }
+        { marker = ($2 in installed) ? "  \033[32m[installed]\033[0m" : ""; print $1 "\t" $2 marker }
+    ' | fzf \
+    --multi \
+    --ansi \
+    --delimiter='\t' \
+    --with-nth='1,3' \
+    --preview 'flatpak remote-info --user flathub {2}' \
+    --preview-label='alt-p: toggle | Tab: multi-select' \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --bind='alt-d:preview-half-page-down,alt-u:preview-half-page-up' \
+    --bind='alt-k:preview-up,alt-j:preview-down' \
+    --color='pointer:green,marker:green' \
+    --header="Search Flatpak Applications (Flathub)") || {
+    echo "No applications selected."
+    return 0
+  }
+
+  # Extract application IDs (column 2)
+  local app_ids
+  app_ids=$(echo "$selected" | awk -F'\t' '{print $2}' | awk '{print $1}')
+
+  _sep
+  _info "Installing Flatpak: $app_ids"
+  _run_or_fail "Flatpak applications installed" \
+    flatpak install --user -y $app_ids
+}
+
+flatpak-remove() {
+  local selected
+  selected=$(flatpak list --user --app --columns=name,application 2>/dev/null | fzf \
+    --multi \
+    --preview 'flatpak info {2}' \
+    --accept-nth=2 \
+    --preview-label='alt-p: toggle | Tab: multi-select' \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --color='pointer:green,marker:green' \
+    --header="Select Flatpak Applications to Remove") || {
+    echo "No applications selected."
+    return 0
+  }
+
+  _sep
+  _warn "Flatpak apps to remove: $selected"
+  _confirm_or_abort "Confirm removal?"
+
+  _run_or_fail "Flatpak applications removed" \
+    bash -c "echo '$selected' | xargs -ro flatpak uninstall --user -y"
+}
+
+# ─── pacman-orphans ───────────────────────────────────────────────────────────
+
+pacman-orphans() {
+  local orphans
+  orphans=$(pacman -Qdttq 2>/dev/null)
+
+  if [[ -z "$orphans" ]]; then
+    _success "No orphaned packages found."
+    return 0
+  fi
+
+  local count
+  count=$(wc -l <<<"$orphans")
+  _warn "$count orphaned package(s) found:"
+
+  local selected
+  selected=$(echo "$orphans" | fzf \
+    --multi \
+    --preview 'pacman -Qi {}' \
+    --preview-label='Space: select | Tab: multi-select | Enter: remove selected' \
+    --preview-label-pos='bottom' \
+    --preview-window='down:65%:wrap' \
+    --bind='alt-p:toggle-preview' \
+    --color='pointer:green,marker:yellow' \
+    --header="Orphaned Packages — select to remove  [all selected by default]" \
+    --bind='load:select-all') || {
+    echo "Nothing selected."
+    return 0
+  }
+
+  _sep
+  _warn "Will remove: $selected"
+  _confirm_or_abort "Remove selected orphans?"
+
+  _run_or_fail "Orphans removed" \
+    bash -c "echo '$selected' | xargs -r sudo pacman -Rns --noconfirm"
+}
+
+# ─── pacman-cache ─────────────────────────────────────────────────────────────
+
+pacman-cache() {
+  if ! command -v paccache &>/dev/null; then
+    _error "paccache not found. Install pacman-contrib: sudo pacman -S pacman-contrib"
+    return 1
+  fi
+
+  local cache_dir="/var/cache/pacman/pkg"
+  local cache_size
+  cache_size=$(du -sh "$cache_dir" 2>/dev/null | awk '{print $1}')
+  local pkg_count
+  pkg_count=$(ls "$cache_dir"/*.pkg.tar.* 2>/dev/null | wc -l)
+
+  _sep
+  _info "Pacman cache info"
+  printf "  Path       : %s\n" "$cache_dir"
+  printf "  Size       : ${C_YELLOW}%s${C_RESET}\n" "$cache_size"
+  printf "  Packages   : %s files\n" "$pkg_count"
+  _sep
+
+  echo ""
+  echo "  Keep how many versions per package?"
+  echo "  ${C_DIM}(default: 2 — removes all but last 2 versions)${C_RESET}"
+  read -r -p "  Versions to keep [2]: " keep
+  keep="${keep:-2}"
+
+  if ! [[ "$keep" =~ ^[0-9]+$ ]]; then
+    _error "Invalid input. Aborting."
+    return 1
+  fi
+
+  echo ""
+  _info "Preview of what will be removed (paccache -dk${keep}):"
+  paccache -dk"$keep" 2>/dev/null || true
+  echo ""
+
+  _confirm_or_abort "Proceed with cleaning? (keep ${keep} version(s))"
+
+  _run sudo paccache -rk"$keep"
+
+  local new_size
+  new_size=$(du -sh "$cache_dir" 2>/dev/null | awk '{print $1}')
+  post_success_message "Cache cleaned. Size: ${cache_size} → ${new_size}"
+}
+
+# ─── system-info ──────────────────────────────────────────────────────────────
+
+system-info() {
+  _sep
+  printf "  ${C_BOLD}${C_CYAN}󰣇  System Info${C_RESET}\n"
+  _sep
+  echo ""
+
+  # Kernel & OS
+  local kernel os_name
+  kernel=$(uname -r)
+  os_name=$(grep "^PRETTY_NAME" /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+  printf "  ${C_BOLD}OS${C_RESET}       : %s\n" "$os_name"
+  printf "  ${C_BOLD}Kernel${C_RESET}   : %s\n" "$kernel"
+
+  # Uptime
+  local uptime_str
+  uptime_str=$(uptime -p 2>/dev/null || uptime | sed 's/.*up //' | sed 's/,.*//')
+  printf "  ${C_BOLD}Uptime${C_RESET}   : %s\n" "$uptime_str"
+
+  echo ""
+
+  # CPU
+  local cpu_model cpu_usage
+  cpu_model=$(grep "model name" /proc/cpuinfo | head -1 | cut -d: -f2 | sed 's/^ //')
+  cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{printf "%.1f%%", 100 - $8}' 2>/dev/null || echo "N/A")
+  printf "  ${C_BOLD}CPU${C_RESET}      : %s\n" "$cpu_model"
+  printf "  ${C_BOLD}CPU Usage${C_RESET}: %s\n" "$cpu_usage"
+
+  # RAM
+  local ram_info total_ram used_ram
+  ram_info=$(free -h | awk '/^Mem:/ {print $3 " / " $2 " (" int($3/$2*100) "%)"}' 2>/dev/null || echo "N/A")
+  printf "  ${C_BOLD}RAM${C_RESET}      : %s\n" "$ram_info"
+
+  echo ""
+
+  # Package counts
+  local pacman_count aur_count flatpak_count
+  pacman_count=$(pacman -Qq 2>/dev/null | wc -l)
+  aur_count=$(pacman -Qm 2>/dev/null | wc -l)
+  flatpak_count=$(flatpak list --app 2>/dev/null | wc -l)
+
+  printf "  ${C_BOLD}Packages${C_RESET}\n"
+  printf "    󰮯  Pacman  : %s\n" "$pacman_count"
+  printf "    󰣇  AUR     : %s\n" "$aur_count"
+  printf "    󰏖  Flatpak : %s\n" "$flatpak_count"
+
+  echo ""
+
+  # Last update date (from pacman log)
+  local last_update
+  last_update=$(grep -a "starting full system upgrade" /var/log/pacman.log 2>/dev/null |
+    tail -1 | grep -oP '^\[\K[^\]]+' || echo "unknown")
+  printf "  ${C_BOLD}Last update${C_RESET}: %s\n" "$last_update"
+
+  echo ""
+
+  # Temperatures (via sensors if available)
+  if command -v sensors &>/dev/null; then
+    local temps
+    temps=$(sensors 2>/dev/null | grep -E "^(Core|Tdie|Tctl|edge|junction|CPU|Package)" |
+      awk '{printf "    %-20s %s\n", $1, $2}')
+    if [[ -n "$temps" ]]; then
+      printf "  ${C_BOLD}Temperatures${C_RESET}\n"
+      echo "$temps"
+      echo ""
+    fi
+  else
+    _dim "  (install lm_sensors for temperature info)"
+  fi
+
+  # Orphans reminder
+  local orphan_count
+  orphan_count=$(pacman -Qdtq 2>/dev/null | wc -l)
+  if ((orphan_count > 0)); then
+    _warn "$orphan_count orphaned package(s) found. Run: aurora pacman-orphans"
+  fi
+
+  # Disk usage
+  echo ""
+  printf "  ${C_BOLD}Disk${C_RESET}\n"
+  df -h --output=target,used,avail,pcent 2>/dev/null |
+    grep -E "^(/ |/home|/boot)" |
+    awk '{printf "    %-15s %s used, %s free (%s)\n", $1, $2, $3, $4}'
+
+  _sep
+}
+
+# ─── dispatch ─────────────────────────────────────────────────────────────────
+
+# Acquire lock for mutating operations
+case "${1:-}" in
+system-update | pacman-search | pacman-remove | yay-search | yay-remove | \
+  flatpak-search | flatpak-remove | pacman-orphans | pacman-cache)
+  _acquire_lock
+  ;;
+esac
+
+case "${1:-}" in
+system-update) system-update ;;
+pacman-search) pacman-search ;;
+pacman-remove) pacman-remove ;;
+yay-search) yay-search ;;
+yay-remove) yay-remove ;;
+flatpak-search) flatpak-search ;;
+flatpak-remove) flatpak-remove ;;
+pacman-orphans) pacman-orphans ;;
+pacman-cache) pacman-cache ;;
+system-info) system-info ;;
+*)
+  echo ""
+  printf "  ${C_BOLD}${C_CYAN}aurora${C_RESET} — package manager helper for Arch Linux\n"
+  echo ""
+  printf "  ${C_BOLD}Usage:${C_RESET} aurora <command> [--dry-run]\n"
+  echo ""
+  printf "  ${C_BOLD}Update${C_RESET}\n"
+  printf "    system-update    Update all packages (pacman + AUR + flatpak)\n"
+  echo ""
+  printf "  ${C_BOLD}Install${C_RESET}\n"
+  printf "    pacman-search    Search and install pacman packages\n"
+  printf "    yay-search       Search and install AUR packages\n"
+  printf "    flatpak-search   Search and install Flatpak apps\n"
+  echo ""
+  printf "  ${C_BOLD}Remove${C_RESET}\n"
+  printf "    pacman-remove    Remove pacman packages\n"
+  printf "    yay-remove       Remove AUR packages\n"
+  printf "    flatpak-remove   Remove Flatpak apps\n"
+  printf "    pacman-orphans   Find and remove orphaned packages\n"
+  echo ""
+  printf "  ${C_BOLD}Maintenance${C_RESET}\n"
+  printf "    pacman-cache     Clean pacman package cache\n"
+  printf "    system-info      Show system overview\n"
+  echo ""
+  printf "  ${C_BOLD}Flags${C_RESET}\n"
+  printf "    --dry-run, -n    Preview changes without executing (system-update)\n"
+  echo ""
+  exit 1
+  ;;
+esac

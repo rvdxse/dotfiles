@@ -1,0 +1,302 @@
+{
+    "layer": "top", // Waybar at top layer
+    "position": "top", // Waybar position (top|bottom|left|right)
+    // "width": 1280, // Waybar width
+    // Choose the order of the modules
+    "modules-left": ["hyprland/workspaces", "custom/updates", "custom/music"],  
+    "modules-center": [/* "custom/music", */ "custom/applauncher", "hyprland/window", "custom/weather"],  
+    "modules-right": ["group/group-volume", "battery", "clock", "idle_inhibitor","hyprland/language", "network", "bluetooth", "tray"],
+
+    "hyprland/workspaces": {
+			"format": "{icon}",
+			"on-click": "activate",
+			"format-icons": {
+				/**"active": "",**/
+        "1": "",
+        "2": "",
+		    "3": "",
+		    "4": "",
+		    "5": "",
+        "6": "",
+		    "active": "",
+		    "default": ""
+			},
+			"sort-by-number": true,
+			//"persistent-workspaces": {
+			//	"*": 2, // 5 workspaces by default on every monitor
+			//	"HDMI-A-1": 3 // but only three on HDMI-A-1
+			//}
+		},
+    "tray": {
+       //"show-passive-items": true,
+        "icon-size": 20,
+        "spacing": 10
+    },
+    "cpu": {
+	    "interval": 10,
+      "on-click": "kitty --class taskmgr -e btop",
+    	"format": "{}% ",
+	    "max-length": 10
+    },
+    "power-profiles-daemon": {
+      "format": "{icon}",
+      "tooltip-format": "Power profile: {profile}nDriver: {driver}",
+      "tooltip": true,
+      "format-icons": {
+        "default": "",
+        "performance": "",
+        "balanced": "",
+        "power-saver": ""
+      }
+    },
+    "bluetooth": {
+        "format": "󰂯",
+        "format-disabled": "󰂲",
+        "format-connected": " {num_connections}",
+        "tooltip-format": "{controller_alias}\n\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias} ({device_address})",
+        "on-click": "blueman-manager",
+        "on-click-right": "bluetoothctl power off"
+    }, 
+    "custom/music": {
+      "format": "<span>{icon}</span> {text}",
+      "format-icons": { 
+        "Playing": "󰎈",
+        "Paused": "󰏤"
+      },
+      "escape": true,
+      "return-type": "json",
+      "max-length": 60,
+      // "exec": "playerctl -a metadata --format '{\"text\": \"{{artist}} - {{title}}\", \"alt\": \"{{status}}\", \"class\": \"{{lc(status)}}\", \"tooltip\": \"Player: {{playerName}}\\nTitle: {{title}}\\nArtist: {{artist}}\\nAlbum: {{album}}\"}' --follow", 
+      "exec": "playerctl metadata --format '{\"text\": \"{{title}} - {{artist}}\", \"alt\": \"{{status}}\", \"class\": \"{{lc(status)}}\"}' --follow",
+      "on-click": "playerctl play-pause",
+      "on-scroll-up": "playerctl next",
+      "on-scroll-down": "playerctl previous"
+      //"escape": true
+},
+
+  //  "custom/music": {
+  //      "format": "  {}",
+  //      "escape": true,
+  //      "interval": 5,
+  //      "tooltip": false,
+  //      "exec": "playerctl --player=spotify metadata --format='{{artist}} - {{ title }}'",
+  //      "on-click": "playerctl --player=spotify play-pause",
+  //      "max-length": 50
+  //  },
+  //  "clock": {
+  //      "timezone": "Europe/Kyiv",
+  //      "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+  //      "format-alt": " {:%d/%m/%Y}",
+  //      "format": "󰥔 {:%H:%M}"
+  //  },
+  "clock": {
+	"format": "{:%H:%M}  ",
+	"format-alt": "{:%A, %B %d, %Y (%R)}  ",
+	"tooltip-format": "<tt><small>{calendar}</small></tt>",
+	"calendar": {
+		"mode"          : "year",
+		"mode-mon-col"  : 3,
+		"weeks-pos"     : "right",
+		"on-scroll"     : 1,
+		"on-click-right": "mode",
+		"format": {
+			"months":     "<span color='#ffead3'><b>{}</b></span>",
+			"days":       "<span color='#ecc6d9'><b>{}</b></span>",
+			"weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+			"weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+			"today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+		}
+	},
+	"actions": {
+		"on-click-right": "mode",
+		"on-click-forward": "tz_up",
+		"on-click-backward": "tz_down",
+		"on-scroll-up": "shift_up",
+		"on-scroll-down": "shift_down"
+	}
+},
+  "temperature": {
+    "critical-threshold": 80,
+    "on-click": "exec kitty -e btop",
+    "format": "{icon} {temperatureC}°C",
+    "format-icons": [
+      "",
+      "",
+      ""
+    ]
+  },
+
+    "backlight": {
+        "device": "intel_backlight",
+        "format": "{icon}",
+        "format-icons": ["", "", "", "", "", "", "", "", ""]
+    },
+    "battery": {
+        "states": {
+            "warning": 20,
+            "critical": 10
+        },
+        "format": "{capacity}% {icon}",
+        "format-charging": "󰂄",
+        "format-plugged": "󱟢",
+        "format-alt": "{icon}",
+        "format-icons": ["", "", "", "", ""],
+        "events": {
+		        "on-discharging-warning": "notify-send -u normal 'Low Battery'",
+		        "on-discharging-critical": "notify-send -u critical 'Very Low Battery'",
+		        "on-charging-100": "notify-send -u normal 'Battery Full!'"
+	      },
+        //"format-icons": ["󰂃", "󰂎", "󰁺",  "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+    },
+    "pulseaudio": {
+        // "scroll-step": 1, // %, can be a float
+        "format": "{icon} {volume}%",
+        "format-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "default": ["", "", " "]
+        },
+        "on-click": "pavucontrol"
+    },
+     "pulseaudio/slider": {
+        "min": 0,
+        "max": 100,
+        "cursor": true,
+        "on-click-right": "hyprctl dispatch exec 'pavucontrol -t 4'"
+    },
+    "network": {
+        "on-click": "kitty -e nmtui",
+      	"format-icons": [
+		"󰤟",
+		"󰤢",
+		"󰤥",
+		"󰤨"
+	],
+	"format": "{ifname}",
+	      "format-wifi": "{icon}",
+	      "format-ethernet": "{ifname} ",
+	      "format-disconnected": "", //An empty format will hide the module.
+	      "format-disconnected": "",
+	      "tooltip-format": "{ifname}",
+      	"tooltip-format-wifi": "{essid} ({signalStrength}%) ",
+      	"tooltip-format-ethernet": "{ifname} ",
+      	"tooltip-format-disconnected": "Disconnected",
+      	"max-length": 50
+},
+    "custom/activewindow": {
+	    "return-type": "json",
+	    "format": "{}",
+	    "tooltip-format": "{}",
+
+        "exec": "sh ~/.config/waybar/scripts/active-window.sh",
+        "interval": 1,
+        "max-length": 40
+    },
+    "idle_inhibitor": {
+	    "format": "{icon}",
+	    "format-icons": {
+		    "activated": "",
+		    "deactivated": ""
+	    },
+	    "timeout": 60
+    },
+    "hyprland/window": {
+        "format": "{title}",
+        "max-length": 50,
+        "rewrite": {
+          "^$": "Aurora Linux",
+          "(.*) — Mozilla Firefox": "󰈹 Firefox",
+          "(.*) — Zen Browser": "󰖟 Zen",
+          "(.*) – Chromium": " Chromium",
+          "(.*) - Google Chrome": " Chrome",
+          "(.*)Youtube(.*)": "󰗃 Youtube",
+          "(.*) - Visual Studio Code": "󰨞 VS Code",
+          "(.*) - Discord": " Discord"
+    }
+    },
+    "hyprland/language": {
+        "format": "⌨ {}",
+        "format-uk": "УКР",
+        "format-en": "ENG",
+        "format-ru": "РУС",
+        "on-click": "hyprctl switchxkblayout current next"
+    },	
+    "custom/lock": {
+        "tooltip": false,
+        "on-click": "sh -c '(sleep 0.5s; hyprlock --grace 0)' & disown",
+        "format": ""
+    },
+    "custom/power": {
+        "tooltip": false,
+        "on-click": "wlogout &",
+        "format": "⏻"
+    },
+    "custom/updates": {
+        "exec": "~/.config/waybar/scripts/update-check.sh",
+        "interval": 3600,
+        "return-type": "json",
+        "on-click": "bash -c 'read p y f < /tmp/update-counts; kitty -e aurora system-update $p $y $f'",
+        "format": "{}",
+        "tooltip": true
+    },
+    "custom/applauncher": {
+      "format": "",
+      "on-click": "rofi -show drun -theme-str '* { width: 1000px; } window { location: north; anchor: north; height: 800px; } listview { columns: 4; }'",
+      "tooltip": false
+  },
+    // [EXAMPLE MODULE CONFIG]
+
+  "custom/weather": {
+    "interval": 900, // in seconds = 15 minutes
+    "exec": "exec ~/.config/waybar/scripts/weather/get_weather.rb",
+    "return-type": "json",
+    "markup": true,
+    "tooltip": true,
+    "on-scroll-up": "~/.config/waybar/scripts/weather/get_weather.rb --next && pkill -RTMIN+5 waybar",
+    "on-scroll-down": "~/.config/waybar/scripts/weather/get_weather.rb --prev && pkill -RTMIN+5 waybar",
+    "on-click": "~/.config/waybar/scripts/weather/get_weather.rb --toggle && pkill -RTMIN+5 waybar",
+    "on-click-right": "~/.config/waybar/scripts/weather/get_weather.rb --toggle && pkill -RTMIN+5 waybar"
+  },
+
+    "group/group-volume": {
+      "orientation": "horizontal",
+      "drawer": {
+        "transition-duration": 600,
+        "transition-left-to-right": true
+  },
+    "modules":
+      ["pulseaudio", "pulseaudio/slider"]
+
+},
+    "mpris": {
+    "justify": "center",
+    "dynamic-importance-order" : ["title", "artist", "album"],
+    "dynamic-order" : ["title", "artist", "album"],
+    "format": "{player_icon} {dynamic}",
+    "format-paused": "{status_icon} <i> {dynamic} </i>",
+    "format-stopped": "{status_icon}",
+    "interval": 1,
+    "dynamic-separator": "  ",
+    "player-icons": {
+      "default": "\u25b6",
+      "mpv": "\ud83c\udfb5",
+      "spotify": "\uf1bc",
+      "vlc": "\uf8e0"
+    },
+    "status-icons": {
+      "paused": "\uf04c",
+      "playing": "\uf04b",
+      "stopped": "\uf04d"
+    },
+    "max-length": 60,
+    "on-click": "playerctl play-pause",
+    "on-click-middle": "playerctl previous",
+    "on-scroll-up": "playerctl position 1-",
+    "on-scroll-down": "playerctl position 1+",
+    "tooltip": true,
+    "tooltip-format": "{title}\nby: {artist}\n{position} / {length}\nPlayer: {player}\n\n󰐎 Click to play/pause\n󰺤 Scroll to seek\n󰙤 Middle click previous\n󰙢 Right click next",  
+    "tooltip-format-stopped": "Player: {player}\n\n󰐎 Click to play/pause\n󰺤 Scroll to seek\n󰙤 Middle click previous\n󰙢 Right click next"
+  }
+}
+}

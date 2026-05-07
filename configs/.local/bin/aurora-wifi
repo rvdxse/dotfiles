@@ -1,0 +1,60 @@
+#!/bin/bash
+
+clear
+gum style --foreground 212 --border double --margin "1 2" --padding "0 2" "📡 AuroraOS Network Setup"
+
+WIRED_CONNECTED=$(nmcli -t -f TYPE,STATE dev | grep -E '^ethernet:connected')
+
+if [ -n "$WIRED_CONNECTED" ]; then
+    gum style --foreground 46 --bold "🔌 Обнаружено активное проводное подключение (Ethernet)!"
+    
+    if ! gum confirm --affirmative "Настроить Wi-Fi" --negative "Пропустить" "Хотите дополнительно настроить Wi-Fi?"; then
+        gum style --foreground 214 "Настройка Wi-Fi пропущена. Интернет уже работает."
+        exit 0
+    fi
+
+fi
+
+
+while true; do
+    gum spin --spinner dot --title "Сканирование эфира..." -- nmcli dev wifi rescan >/dev/null 2>&1
+    SSIDS=$(nmcli -t -f SSID dev wifi list | grep -v '^$' | awk '!a[$0]++')
+    
+    REFRESH_BTN="🔄 Обновить список сетей"
+    CANCEL_BTN="❌ Отмена"
+
+    if [ -z "$SSIDS" ]; then
+        MENU_ITEMS="$REFRESH_BTN\n$CANCEL_BTN"
+    else
+        MENU_ITEMS="$REFRESH_BTN\n$SSIDS\n$CANCEL_BTN"
+    fi
+
+    SELECTED=$(echo -e "$MENU_ITEMS" | gum choose --header "Выберите сеть для подключения:" --limit 1)
+
+    if [ -z "$SELECTED" ] || [ "$SELECTED" == "$CANCEL_BTN" ]; then
+        gum style --foreground 214 "Подключение отменено."
+        exit 0
+    elif [ "$SELECTED" == "$REFRESH_BTN" ]; then
+        continue
+    else
+        SSID="$SELECTED"
+        break
+    fi
+done
+
+if nmcli -t -f NAME connection show | grep -Fxq "$SSID"; then
+    gum spin --spinner line --title "Подключение к сохраненной сети $SSID..." -- nmcli connection up "$SSID" >/dev/null 2>&1
+else
+    PASSWORD=$(gum input --password --placeholder "Пароль от $SSID (Enter если без пароля)")
+    if [ -z "$PASSWORD" ]; then
+        gum spin --spinner line --title "Подключение к $SSID..." -- nmcli dev wifi connect "$SSID" >/dev/null 2>&1
+    else
+        gum spin --spinner line --title "Подключение к $SSID..." -- nmcli dev wifi connect "$SSID" password "$PASSWORD" >/dev/null 2>&1
+    fi
+fi
+
+if [ $? -eq 0 ]; then
+    gum style --foreground 46 --bold "✅ Успешно подключено к $SSID!"
+else
+    gum style --foreground 196 --bold "❌ Ошибка подключения."
+fi

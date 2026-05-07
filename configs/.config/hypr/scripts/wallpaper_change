@@ -1,0 +1,6 @@
+#!/bin/bash
+
+chosen=$(find ~/Pictures/Wallpapers -type f | xargs -n1 basename | rofi -dmenu -p 'Choose wallpaper')
+fullpath=$(find ~/Pictures/Wallpapers -type f | grep "/$chosen$")
+python ~/.local/bin/wallpaper_change.py "$fullpath"
+
