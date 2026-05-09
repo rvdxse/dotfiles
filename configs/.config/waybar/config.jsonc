@@ -5,7 +5,7 @@
     // Choose the order of the modules
     "modules-left": ["hyprland/workspaces", "custom/updates", "custom/music"],  
     "modules-center": [/* "custom/music", */ "custom/applauncher", "hyprland/window", "custom/weather"],  
-    "modules-right": ["group/group-volume", "battery", "clock", "idle_inhibitor","hyprland/language", "network", "bluetooth", "tray"],
+    "modules-right": ["group/group-volume", "cpu", "battery", "clock", "idle_inhibitor","hyprland/language", "network", "bluetooth", "tray"],
 
     "hyprland/workspaces": {
 			"format": "{icon}",

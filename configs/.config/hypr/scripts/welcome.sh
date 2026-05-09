@@ -11,7 +11,7 @@ Press Super + Return to open a terminal.
 
 Enjoy your setup."
 
-CONFIG="$HOME/.config/hypr/hyprland.conf"
+CONFIG="$HOME/.config/hypr/autostart.conf"
 
 if [ -f "$CONFIG" ]; then
   sed -i "/exec-once = .*welcome.sh/s/^/# /" "$CONFIG"
