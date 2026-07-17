@@ -24,7 +24,7 @@ if status is-interactive # Commands to run in interactive sessions can go here
     end
     # Aliases
     alias pamcan pacman
-    alias ls 'eza --icons'
+    alias ls 'eza --icons always'
     alias l 'ls -l'
     alias la 'ls -a'
     alias lla 'ls -la'

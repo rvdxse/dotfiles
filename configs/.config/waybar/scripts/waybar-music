@@ -1,0 +1,7 @@
+#!/bin/bash
+playerctl metadata --follow --format '{{artist}}|{{title}}|{{status}}' | while IFS='|' read -r artist title status; do
+  text="$artist - $title"
+  class="${status,,}"
+  text="${text//\"/\\\"}"
+  printf '{"text": "%s", "alt": "%s", "class": "%s"}\n' "$text" "$status" "$class"
+done
