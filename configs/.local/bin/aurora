@@ -271,7 +271,8 @@ system-update() {
   post_success_message "🎉 All updates finished!"
 
   # Refresh waybar cache
-  command -v update-checker &>/dev/null && update-checker --refresh &>/dev/null &
+  pkill -RTMIN+8 waybar
+  # command -v update-checker &>/dev/null && update-checker --refresh &>/dev/null &
 }
 
 # ─── pacman ───────────────────────────────────────────────────────────────────

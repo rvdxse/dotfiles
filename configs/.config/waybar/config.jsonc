@@ -239,6 +239,7 @@
     "custom/updates": {
         "exec": "~/.config/waybar/scripts/update-check.sh",
         "interval": 3600,
+        "signal": 8,
         "return-type": "json",
         "on-click": "bash -c 'read p y f < /tmp/update-counts; hyprctl dispatch exec -- kitty -e aurora system-update $p $y $f'",
         //"on-click": "bash -c 'read p y f < /tmp/update-counts; kitty -e aurora system-update $p $y $f'",
