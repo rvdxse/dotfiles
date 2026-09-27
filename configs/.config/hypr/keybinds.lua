@@ -33,12 +33,13 @@ hl.bind("SUPER + SHIFT" .. " + " .. "P", hl.dsp.exec_cmd("hyprpicker -a| wl-copy
 
 hl.bind(mainMod .. " + " .. "F", hl.dsp.exec_cmd("hyprvoice toggle"))
 
-hl.bind(
-	mainMod .. " + " .. "V",
-	hl.dsp.exec_cmd(
-		"cliphist list| rofi -dmenu -display-columns 2| cliphist decode| wl-copy && wtype -M ctrl v -m ctrl"
-	)
-)
+--hl.bind(
+--	mainMod .. " + " .. "V",
+--	hl.dsp.exec_cmd(
+--		"cliphist list| rofi -dmenu -display-columns 2| cliphist decode| wl-copy && wtype -M ctrl v -m ctrl"
+--	)
+--)
+hl.bind(mainMod .. " + " .. "V", hl.dsp.exec_cmd("vicinae vicinae://launch/clipboard/history?toggle=true"))
 
 hl.bind(mainMod .. " + " .. "Return", hl.dsp.exec_cmd("kitty"))
 
@@ -54,7 +55,13 @@ hl.bind(mainMod .. " + " .. "C", hl.dsp.exec_cmd("code"))
 
 hl.bind(mainMod .. " + " .. "W", hl.dsp.window.float())
 
-hl.bind(mainMod .. " + " .. "Space", hl.dsp.exec_cmd("vicinae toggle"))
+--hl.bind(
+--	"ALT + F10",
+--	hl.dsp.exec_cmd(
+--		'killall -USR1 gpu-screen-recorder && notify-send -u normal "ShadowPlay" "Последние 2 минуты сохранены!"'
+--	)
+--)
+--hl.bind(mainMod .. " + " .. "Space", hl.dsp.exec_cmd("vicinae toggle"))
 
 --bindd = $mainMod, Space, Open app launcher, exec, $menu
 
@@ -152,7 +159,7 @@ hl.bind(mainMod .. " + " .. "SHIFT" .. " + " .. 9, hl.dsp.window.move({ workspac
 
 hl.bind(mainMod .. " + " .. "SHIFT" .. " + " .. 0, hl.dsp.window.move({ workspace = 10 }))
 
-hl.bind("CONTROL + SHIFT" .. " + " .. "Escape", hl.dsp.exec_cmd("$terminal --class taskmgr -e btop"))
+hl.bind("CONTROL + SHIFT" .. " + " .. "Escape", hl.dsp.exec_cmd("kitty --class taskmgr -e btop"))
 
 -- Scroll workspaces
 

@@ -45,11 +45,17 @@ subprocess.run(
         "30",
         "--transition-fps",
         "90",
+        "--transition-duration",
+        "1",
         wall,
     ]
 )
 # subprocess.run(["pkill", "hyprlax"])
 subprocess.run(["wal", "-i", wall, "-n"])  # , "--saturate", '0.75'])
+subprocess.run(["hyprctl", "reload"])
+subprocess.run(["pkill", "waybar"])
+subprocess.run(["waybar"])
+subprocess.run(["pkill", "-USR1", "cava"])
 # subprocess.run(["hyprlax", "-d", "0.5", wall])
 # subprocess.run(["wal", "-i", wall, "-n"]) #, "--saturate", '0.75'])
 # Cmd.run(f'wal -i', wal, '-n')

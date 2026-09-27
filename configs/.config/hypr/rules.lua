@@ -37,7 +37,17 @@ hl.window_rule({
 	float = true,
 	size = { 1200, 800 },
 	center = 1,
-	opacity = "0.8",
+})
+
+hl.window_rule({
+	name = "sushi_float",
+	match = {
+		class = "org.gnome.NautilusPreviewer",
+	},
+	float = true,
+	size = { 1200, 675 },
+	center = 1,
+	opacity = "1.0",
 })
 
 hl.window_rule({
@@ -154,6 +164,14 @@ hl.layer_rule({
 hl.layer_rule({
 	match = {
 		namespace = "vicinae",
+	},
+	blur = true,
+	ignore_alpha = 0,
+})
+
+hl.layer_rule({
+	match = {
+		namespace = "gsr-ui",
 	},
 	blur = true,
 	ignore_alpha = 0,

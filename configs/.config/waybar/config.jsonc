@@ -5,8 +5,8 @@
     // "width": 1280, // Waybar width
     // Choose the order of the modules
     "modules-left": ["hyprland/workspaces", "custom/updates", "custom/music"],  
-    "modules-center": [/* "custom/music", */ "custom/applauncher", "hyprland/window", "custom/weather"],  
-    "modules-right": ["group/group-volume", "cpu", "battery", "clock", "idle_inhibitor","hyprland/language", "network", "bluetooth", "tray"],
+    //"modules-center": [/* "custom/music", */ "custom/applauncher", "hyprland/window"],  
+    "modules-right": ["group/group-volume", "cpu", "battery", "clock", "idle_inhibitor","hyprland/language", "network", "bluetooth", "tray", "custom/lock", "custom/power"],
     "custom/cava": {
         "format": "{}",
         "exec": "~/.config/waybar/scripts/cava.sh"
@@ -36,9 +36,10 @@
         "icon-size": 20,
         "spacing": 10
     },
+
     "cpu": {
 	    "interval": 10,
-      "on-click": "hyprctl dispatch exec -- kitty --class taskmgr -e btop",
+      "on-click": "hyprctl dispatch 'hl.dsp.exec_cmd(\"kitty --class taskmgr -e btop\")'",
     	"format": "{}% ",
 	    "max-length": 10
     },
@@ -59,7 +60,7 @@
         "format-connected": " {num_connections}",
         "tooltip-format": "{controller_alias}\n\n{device_enumerate}",
         "tooltip-format-enumerate-connected": "{device_alias} ({device_address})",
-        "on-click": "blueman-manager",
+        "on-click": "hyprctl dispatch 'hl.dsp.exec_cmd(\"kitty --class taskmgr -e bluetui\")'",
         "on-click-right": "bluetoothctl power off"
     }, 
     "custom/music": {
@@ -72,6 +73,7 @@
       "return-type": "json",
       "max-length": 60,
       // "exec": "playerctl -a metadata --format '{\"text\": \"{{artist}} - {{title}}\", \"alt\": \"{{status}}\", \"class\": \"{{lc(status)}}\", \"tooltip\": \"Player: {{playerName}}\\nTitle: {{title}}\\nArtist: {{artist}}\\nAlbum: {{album}}\"}' --follow", 
+      //"exec": "~/.config/waybar/scripts/now-playing.sh",
       "exec": "playerctl metadata --format '{\"text\": \"{{title}} - {{artist}}\", \"alt\": \"{{status}}\", \"class\": \"{{lc(status)}}\"}' --follow",
       "on-click": "playerctl play-pause",
       "on-scroll-up": "playerctl next",
@@ -142,14 +144,20 @@
             "critical": 10
         },
         "format": "{capacity}% {icon}",
-        "format-charging": "󰂄",
+        //"format-charging": "󰂄",
         "format-plugged": "󱟢",
-        "format-alt": "{icon}",
-        "format-icons": ["", "", "", "", ""],
+        //"format-alt": "{icon}",
+        "format-icons": {
+	      	"default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+		      "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"]
+	      },
+        //"format-icons": ["", "", "", "", ""],
         "events": {
 		        "on-discharging-warning": "notify-send -u normal 'Low Battery'",
 		        "on-discharging-critical": "notify-send -u critical 'Very Low Battery'",
-		        "on-charging-100": "notify-send -u normal 'Battery Full!'"
+		        "on-charging-100": "notify-send -u normal 'Battery Full!'",
+            "on-discharging": "notify-send -u normal 'Power Switch' Discharging",
+		        "on-charging": "notify-send -u normal 'Power Switch' Charging'"
 	      },
         //"format-icons": ["󰂃", "󰂎", "󰁺",  "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
     },
@@ -161,7 +169,7 @@
             "headphone": "",
             "default": ["", "", " "]
         },
-        "on-click": "pavucontrol"
+        "on-click": "hyprctl dispatch 'hl.dsp.exec_cmd(\"pavucontrol\")'"
     },
      "pulseaudio/slider": {
         "min": 0,
@@ -170,7 +178,7 @@
         "on-click-right": "hyprctl dispatch exec 'pavucontrol -t 4'"
     },
     "network": {
-        "on-click": "hyprctl dispatch exec -- kitty -e nmtui",
+        "on-click": "hyprctl dispatch 'hl.dsp.exec_cmd(\"kitty --class taskmgr -e nmtui\")'",
       	"format-icons": [
 		"󰤟",
 		"󰤢",
@@ -240,15 +248,15 @@
         "exec": "~/.config/waybar/scripts/update-check.sh",
         "interval": 3600,
         "signal": 8,
+        "exec-on-event": false,
         "return-type": "json",
-        "on-click": "bash -c 'read p y f < /tmp/update-counts; hyprctl dispatch exec -- kitty -e aurora system-update $p $y $f'",
-        //"on-click": "bash -c 'read p y f < /tmp/update-counts; kitty -e aurora system-update $p $y $f'",
+        "on-click": "hyprctl dispatch 'hl.dsp.exec_cmd(\"kitty --class taskmgr -e aurora system-update\")'",
         "format": "{}",
         "tooltip": true
     },
     "custom/applauncher": {
       "format": "",
-      "on-click": "rofi -show drun -theme-str '* { width: 1000px; } window { location: north; anchor: north; height: 800px; } listview { columns: 4; }'",
+      "on-click": "vicinae toggle",
       "tooltip": false
   },
     // [EXAMPLE MODULE CONFIG]
