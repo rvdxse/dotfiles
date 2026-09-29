@@ -37,10 +37,8 @@ subprocess.run(
     [
         "awww",
         "img",
-        "--namespace",
-        "default",
         "-t",
-        "wipe",
+        "random",
         "--transition-angle",
         "30",
         "--transition-fps",

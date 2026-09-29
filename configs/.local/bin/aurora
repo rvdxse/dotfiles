@@ -183,24 +183,6 @@ system-update() {
   $DRY_RUN && _warn "DRY-RUN mode — no changes will be made"
 
   _info "Checking for updates..."
-  #echo "UID=$UID"
-  #echo "EUID=$EUID"
-  #echo "USER=$USER"
-  #echo "TMPDIR=$TMPDIR"
-  #echo "CHECKUPDATES_DB=$CHECKUPDATES_DB"
-  #echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
-  #echo "PWD=$PWD"
-  #env | sort >/tmp/aurora-env.txt
-  #echo "${TMPDIR:-/tmp}/checkup-db-${UID}/"
-  #CHECKUPDATES_DB="${TMPDIR:-/tmp}/checkup-db-${UID}/"
-  #fakeroot -- pacman -Sy --disable-sandbox-filesystem --dbpath "$CHECKUPDATES_DB" --logfile ~/bimbo.log
-
-  #local pacman_list yay_list flatpak_list
-  #if ! fakeroot -- pacman -Sy --disable-sandbox-filesystem --dbpath "$CHECKUPDATES_DB" --logfile /dev/null 2>/tmp/aurora-sync-err.log; then
-  #  _error "Cannot fetch updates — $(tail -1 /tmp/aurora-sync-err.log)"
-  #  return 1
-  #fi
-  #pacman_list=$(pacman -Qu --dbpath "$CHECKUPDATES_DB" 2>/dev/null | grep -v '\[.*\]')
   pacman_list=$(checkupdates)
   yay_list=$(yay -Qu --aur)
   flatpak_list=$(flatpak remote-ls --updates 2>/dev/null)

@@ -21,7 +21,7 @@ hl.bind("SUPER + SHIFT" .. " + " .. "minus", hl.dsp.exec_cmd("hyprctl keyword cu
 
 hl.bind(mainMod .. " + " .. "F11", hl.dsp.window.fullscreen())
 
-hl.bind("SUPER" .. " + " .. "R", hl.dsp.exec_cmd("pgrep -x wlogout && pkill -x wlogout || wlogout"))
+hl.bind("SUPER + SHIFT" .. " + " .. "R", hl.dsp.exec_cmd("pgrep -x wlogout && pkill -x wlogout || wlogout"))
 
 hl.bind("SUPER" .. " + " .. "N", hl.dsp.exec_cmd("obsidian"))
 
@@ -33,6 +33,8 @@ hl.bind("SUPER + SHIFT" .. " + " .. "P", hl.dsp.exec_cmd("hyprpicker -a| wl-copy
 
 hl.bind(mainMod .. " + " .. "F", hl.dsp.exec_cmd("hyprvoice toggle"))
 
+hl.bind("SUPER + R", hl.dsp.exec_cmd("voxtype record start"))
+hl.bind("SUPER + R", hl.dsp.exec_cmd("voxtype record stop"), { release = true })
 --hl.bind(
 --	mainMod .. " + " .. "V",
 --	hl.dsp.exec_cmd(
@@ -54,6 +56,15 @@ hl.bind(mainMod .. " + " .. "B", hl.dsp.exec_cmd("zen-browser"))
 hl.bind(mainMod .. " + " .. "C", hl.dsp.exec_cmd("code"))
 
 hl.bind(mainMod .. " + " .. "W", hl.dsp.window.float())
+hl.bind(mainMod .. " + SHIFT + left", hl.dsp.window.move({ direction = "left" }))
+hl.bind(mainMod .. " + SHIFT + down", hl.dsp.window.move({ direction = "down" }))
+hl.bind(mainMod .. " + SHIFT + up", hl.dsp.window.move({ direction = "up" }))
+hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right" }))
+
+hl.bind(mainMod .. " + SHIFT + H", hl.dsp.window.move({ direction = "left" }))
+hl.bind(mainMod .. " + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
+hl.bind(mainMod .. " + SHIFT + K", hl.dsp.window.move({ direction = "up" }))
+hl.bind(mainMod .. " + SHIFT + L", hl.dsp.window.move({ direction = "right" }))
 
 --hl.bind(
 --	"ALT + F10",
@@ -67,7 +78,7 @@ hl.bind(mainMod .. " + " .. "W", hl.dsp.window.float())
 
 hl.bind(mainMod .. " + " .. "P", hl.dsp.window.pseudo())
 
-hl.bind(mainMod .. " + " .. "J", hl.dsp.layout("togglesplit"))
+hl.bind(mainMod .. " + " .. "semicolon", hl.dsp.layout("togglesplit"))
 
 hl.bind(mainMod .. " + " .. "G", hl.dsp.exec_cmd("pkill -SIGUSR1 waybar"))
 
@@ -105,6 +116,11 @@ hl.bind(mainMod .. " + " .. "right", hl.dsp.focus({ direction = "right" }))
 hl.bind(mainMod .. " + " .. "up", hl.dsp.focus({ direction = "up" }))
 
 hl.bind(mainMod .. " + " .. "down", hl.dsp.focus({ direction = "down" }))
+
+hl.bind(mainMod .. " + " .. "H", hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + " .. "J", hl.dsp.focus({ direction = "down" }))
+hl.bind(mainMod .. " + " .. "K", hl.dsp.focus({ direction = "up" }))
+hl.bind(mainMod .. " + " .. "L", hl.dsp.focus({ direction = "right" }))
 
 -- Switch workspaces
 

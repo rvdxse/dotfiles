@@ -4,15 +4,9 @@
 
 ---@module 'hl'
 
-hl.bind("SUPER" .. " + " .. "H", hl.dsp.exec_cmd("kitty -e htop"))
-
 -- Added via script
 
-hl.bind("SUPER + SHIFT" .. " + " .. "R", hl.dsp.exec_cmd("kitty -e ssh VPS"))
-
--- Added via script
-
-hl.bind("SUPER" .. " + " .. "L", hl.dsp.exec_cmd("hyprlock"))
+-- hl.bind("SUPER + SHIFT" .. " + " .. "L", hl.dsp.exec_cmd("hyprlock"))
 
 -- Added via script
 
