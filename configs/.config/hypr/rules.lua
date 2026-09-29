@@ -114,6 +114,14 @@ hl.window_rule({
 
 hl.layer_rule({
 	match = {
+		namespace = "quickshell",
+	},
+	blur = true,
+	ignore_alpha = 0,
+})
+
+hl.layer_rule({
+	match = {
 		namespace = "waybar",
 	},
 	blur = true,
