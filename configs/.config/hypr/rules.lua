@@ -114,10 +114,18 @@ hl.window_rule({
 
 hl.layer_rule({
 	match = {
+		namespace = "voxtype-osd",
+	},
+	blur = true,
+	ignore_alpha = 0.5,
+})
+
+hl.layer_rule({
+	match = {
 		namespace = "quickshell",
 	},
 	blur = true,
-	ignore_alpha = 0,
+	ignore_alpha = 0.5,
 })
 
 hl.layer_rule({
@@ -133,7 +141,7 @@ hl.layer_rule({
 		namespace = "swayosd",
 	},
 	blur = true,
-	ignore_alpha = 0,
+	ignore_alpha = 0.5,
 })
 
 hl.layer_rule({
@@ -150,7 +158,7 @@ hl.layer_rule({
 		namespace = "swaync-notification-window",
 	},
 	blur = true,
-	ignore_alpha = 0.5,
+	ignore_alpha = 0,
 })
 
 hl.layer_rule({
@@ -174,7 +182,7 @@ hl.layer_rule({
 		namespace = "vicinae",
 	},
 	blur = true,
-	ignore_alpha = 0,
+	ignore_alpha = 0.5,
 })
 
 hl.layer_rule({

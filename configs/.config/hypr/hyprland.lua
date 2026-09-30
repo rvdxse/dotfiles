@@ -53,24 +53,16 @@ hl.layer_rule({
 		namespace = "swaync-control-center",
 	},
 	blur = true,
-	ignore_alpha = 0,
+	ignore_alpha = 0.5,
 })
 
 hl.layer_rule({
 	match = {
 		namespace = "swaync-notification-window",
 	},
-	ignore_alpha = 0,
+	ignore_alpha = 0.5,
 	blur = true,
 	animation = "appleEase",
-})
-
-hl.layer_rule({
-	match = {
-		namespace = "swaync",
-	},
-	ignore_alpha = 0,
-	blur = true,
 })
 
 -- this was required to not overflow the blur
