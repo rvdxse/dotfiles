@@ -33,8 +33,8 @@ end
 
 local function doc(_keys, _desc) end
 
--- == Launcher ==
-doc("SUPER + SPACE", "Launcher")
+-- == Vicinae ==
+doc("SUPER + SPACE", "App launcher")
 bind("SUPER + V", "Clipboard history", exec("vicinae vicinae://launch/clipboard/history?toggle=true"))
 doc("SUPER + ,", "Emoji picker")
 
@@ -47,7 +47,7 @@ bind("SUPER + N", "Notes (Obsidian)", exec("obsidian"))
 bind("SUPER + M", "Telegram (AyuGram)", exec("AyuGram"))
 bind("SUPER + A", "Claude web app", exec("open-webapp https://claude.ai"))
 bind("SUPER + Y", "YouTube web app", exec("open-webapp https://youtube.com"))
-bind("SUPER + D", "lazydocker", exec(terminal .. " -e lazydocker"))
+bind("SUPER + D", "lazydocker", exec(terminal .. " -e --class taskmgr lazydocker"))
 bind("CONTROL + SHIFT + Escape", "Task manager (btop)", exec(terminal .. " --class taskmgr -e btop"))
 doc("ALT + Z", "Screen recorder")
 
@@ -127,15 +127,16 @@ end)
 
 -- == Hardware keys ==
 local locked = { locked = true }
+local held = { locked = true, repeating = true }
 
 bind("switch:on:Lid Switch", "Lock screen when lid closes", exec("loginctl lock-session"), locked)
 
-bind("XF86AudioRaiseVolume", "Volume up", exec("swayosd-client --output-volume +2"), locked)
-bind("XF86AudioLowerVolume", "Volume down", exec("swayosd-client --output-volume -2"), locked)
+bind("XF86AudioRaiseVolume", "Volume up", exec("swayosd-client --output-volume +2"), held)
+bind("XF86AudioLowerVolume", "Volume down", exec("swayosd-client --output-volume -2"), held)
 bind("XF86AudioMute", "Mute output", exec("swayosd-client --output-volume mute-toggle"), locked)
 bind("XF86AudioMicMute", "Mute microphone", exec("pamixer --default-source -t"), locked)
-bind("XF86MonBrightnessUp", "Brightness up", exec("swayosd-client --brightness raise"), locked)
-bind("XF86MonBrightnessDown", "Brightness down", exec("swayosd-client --brightness lower"), locked)
+bind("XF86MonBrightnessUp", "Brightness up", exec("swayosd-client --brightness raise"), held)
+bind("XF86MonBrightnessDown", "Brightness down", exec("swayosd-client --brightness lower"), held)
 
 bind("XF86AudioNext", "Media: next", exec("playerctl next"), locked)
 bind("XF86AudioPrev", "Media: previous", exec("playerctl previous"), locked)

@@ -126,6 +126,7 @@ hl.layer_rule({
 	},
 	blur = true,
 	ignore_alpha = 0.5,
+	no_anim = true,
 })
 
 hl.layer_rule({
@@ -141,7 +142,7 @@ hl.layer_rule({
 		namespace = "swayosd",
 	},
 	blur = true,
-	ignore_alpha = 0.5,
+	ignore_alpha = 0.4,
 })
 
 hl.layer_rule({
