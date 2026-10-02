@@ -32,8 +32,11 @@ local function also(keys, action, opts)
 end
 
 local function doc(_keys, _desc) end
--- == SIGMA ==
-bind("SUPER + slash", "Keybinds list", exec("keybinds-menu --menu"))
+
+-- == Launcher ==
+doc("SUPER + SPACE", "Launcher")
+bind("SUPER + V", "Clipboard history", exec("vicinae vicinae://launch/clipboard/history?toggle=true"))
+doc("SUPER + ,", "Emoji picker")
 
 -- == Apps ==
 bind("SUPER + Return", "Terminal", exec(terminal))
@@ -46,7 +49,7 @@ bind("SUPER + A", "Claude web app", exec("open-webapp https://claude.ai"))
 bind("SUPER + Y", "YouTube web app", exec("open-webapp https://youtube.com"))
 bind("SUPER + D", "lazydocker", exec(terminal .. " -e lazydocker"))
 bind("CONTROL + SHIFT + Escape", "Task manager (btop)", exec(terminal .. " --class taskmgr -e btop"))
-bind("SUPER + V", "Clipboard history", exec("vicinae vicinae://launch/clipboard/history?toggle=true"))
+doc("ALT + Z", "Screen recorder")
 
 -- == Voice ==
 bind("SUPER + R", "Voice input: hold to record (voxtype)", exec("voxtype record start"))
@@ -109,9 +112,9 @@ bind("SUPER + SHIFT + W", "Restart waybar", exec("pkill waybar; waybar"))
 bind("SUPER + SHIFT + N", "Notification center", exec("swaync-client -t -sw"))
 bind("SUPER + SHIFT + T", "Change wallpaper", exec(scripts .. "/wallpaper_change"))
 bind("SUPER + SHIFT + R", "Power menu (wlogout)", exec("pgrep -x wlogout && pkill -x wlogout || wlogout"))
-bind("SUPER + equal", "Zoom in", exec("hyprctl keyword cursor:zoom_factor 2.0"))
-bind("SUPER + SHIFT + minus", "Zoom reset", exec("hyprctl keyword cursor:zoom_factor 1.0"))
-bind("SUPER + slash", "Show this cheatsheet", exec(scripts .. "/keybinds-menu --menu"))
+bind("SUPER + equal", "Zoom in", exec("hyprctl eval 'hl.config({ cursor = { zoom_factor = 2.0 } })'"))
+bind("SUPER + SHIFT + minus", "Zoom reset", exec("hyprctl eval 'hl.config({ cursor = { zoom_factor = 1.0 } })'"))
+bind("SUPER + slash", "Show this cheatsheet", exec("keybinds-menu --menu"))
 
 -- Hotkeys lock: F1 enters an empty submap where only F1 works, F1 again leaves it
 bind("SUPER + F1", "Disable / enable all hotkeys", hl.dsp.submap("hide"))
