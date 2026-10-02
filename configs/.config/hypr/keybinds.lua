@@ -76,6 +76,12 @@ hl.bind(mainMod .. " + SHIFT + L", hl.dsp.window.move({ direction = "right" }))
 
 --bindd = $mainMod, Space, Open app launcher, exec, $menu
 
+-- lid closed -> lock the screen
+hl.bind("switch:on:Lid Switch", hl.dsp.exec_cmd("loginctl lock-session"), { locked = true })
+
+-- lid opened -> notify (just to test)
+hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd("notify-send 'Welcome back'"), { locked = true })
+
 hl.bind(mainMod .. " + " .. "P", hl.dsp.window.pseudo())
 
 hl.bind(mainMod .. " + " .. "semicolon", hl.dsp.layout("togglesplit"))
