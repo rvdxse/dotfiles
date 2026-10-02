@@ -11,8 +11,13 @@ import Quickshell.Services.UPower
 import QtQuick
 import QtQuick.Layouts
 
+Variants {
+    model: Quickshell.screens
+
 PanelWindow {
     id: bar
+    required property var modelData
+    screen: modelData
     anchors { top: true; left: true; right: true }
     margins { top: 5; left: 5; right: 5 }
     implicitHeight: 44
@@ -145,8 +150,8 @@ PanelWindow {
 
     // ───────────── updates (твой скрипт из waybar) ─────────────
     Process {
-        id: updProc
-        command: ["sh", "-c", "~/.config/waybar/scripts/update-check.sh"]
+      id: updProc
+      command: ["sh", "-c", "~/.config/waybar/scripts/update-check.sh"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -154,7 +159,12 @@ PanelWindow {
                 catch (e) { bar.updText = text.trim() }
             }
         }
-    }
+      }
+    IpcHandler {
+          target: "updates"
+          function refresh(): void { updProc.running = true }
+        }
+
     Timer { interval: 3600000; running: true; repeat: true; onTriggered: updProc.running = true }
 
     // ───────────── раскладка ─────────────
@@ -518,4 +528,4 @@ PanelWindow {
             }
         }
     }
-}
+}}

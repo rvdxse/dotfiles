@@ -1,8 +1,6 @@
 #!/bin/bash
 
 python ~/.local/bin/wallpaper_change.py ~/Pictures/Wallpapers/shaded_landscape.jpg
-pkill waybar
-waybar &
 notify-send "Aurora is ready ✨" \
   "Your system has been configured successfully.
 

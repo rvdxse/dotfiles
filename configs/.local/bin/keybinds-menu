@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""keybinds-menu: turn keybinds.lua into a searchable dmenu cheatsheet.
+
+  keybinds-menu            print lines to stdout (pipe into any dmenu)
+  keybinds-menu --menu     open vicinae dmenu / rofi / wofi directly
+  keybinds-menu --all      also include hardware keys (XF86*, switches)
+  keybinds-menu -f FILE    use another keybinds file
+
+Override the launcher with KEYBINDS_MENU, e.g. KEYBINDS_MENU="rofi -dmenu -i".
+"""
+
+import argparse
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+DEFAULT_FILE = CONFIG / "hypr" / "keybinds.lua"
+
+# Either a "-- == Section ==" marker or a bind("KEYS", "Description" / doc(...) call.
+# `also(` and `hl.bind(` are intentionally not matched, commented-out lines neither.
+TOKEN = re.compile(
+    r"^--\s*==\s*(?P<section>.+?)\s*==\s*$"
+    r'|^[ \t]*(?:bind|doc)\(\s*"(?P<keys>[^"\n]+)"\s*,\s*"(?P<desc>[^"\n]+)"',
+    re.MULTILINE,
+)
+
+MODS = {
+    "SUPER": "Super",
+    "SHIFT": "Shift",
+    "CONTROL": "Ctrl",
+    "CTRL": "Ctrl",
+    "ALT": "Alt",
+}
+HARDWARE_PREFIXES = ("XF86", "switch:")
+
+
+def pretty(keys: str) -> str:
+    return " + ".join(MODS.get(k.strip(), k.strip()) for k in keys.split(" + "))
+
+
+def parse(text: str):
+    section = ""
+    for m in TOKEN.finditer(text):
+        if m["section"]:
+            section = m["section"]
+        else:
+            yield section, m["keys"], m["desc"]
+
+
+def build_lines(path: Path, include_hardware: bool) -> list[str]:
+    rows = [
+        (section, pretty(keys), desc)
+        for section, keys, desc in parse(path.read_text(encoding="utf-8"))
+        if include_hardware or not keys.startswith(HARDWARE_PREFIXES)
+    ]
+    if not rows:
+        sys.exit(f"keybinds-menu: no binds found in {path}")
+    sw = max(len(r[0]) for r in rows)
+    kw = max(len(r[1]) for r in rows)
+    return [f"{k}  —  {d}  ({s})" for s, k, d in rows]
+    # return [f"{s:<{sw}}  {k:<{kw}}  {d}" for s, k, d in rows]
+
+
+def menu_command() -> list[str]:
+    if env := os.environ.get("KEYBINDS_MENU"):
+        return shlex.split(env)
+    if shutil.which("vicinae"):
+        return ["vicinae", "dmenu"]
+    if shutil.which("rofi"):
+        return ["rofi", "-dmenu", "-i", "-p", "Keybinds"]
+    if shutil.which("wofi"):
+        return ["wofi", "--dmenu", "-i", "-p", "Keybinds"]
+    sys.exit("keybinds-menu: no launcher found (vicinae, rofi, wofi)")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
+    ap.add_argument("-f", "--file", type=Path, default=DEFAULT_FILE)
+    ap.add_argument("--all", action="store_true", help="include hardware keys")
+    ap.add_argument(
+        "--menu", action="store_true", help="launch a dmenu instead of printing"
+    )
+    args = ap.parse_args()
+
+    text = "\n".join(build_lines(args.file, args.all)) + "\n"
+    if args.menu:
+        subprocess.run(menu_command(), input=text, text=True)
+    else:
+        sys.stdout.write(text)
+
+
+if __name__ == "__main__":
+    main()
