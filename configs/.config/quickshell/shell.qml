@@ -239,7 +239,7 @@ PanelWindow {
                     readonly property int wsId: index + 1
                     readonly property bool active: Hyprland.focusedWorkspace?.id === wsId
                     text: bar.wsIcons[index] ?? wsId
-                    color: active ? Theme.sky : (wsArea.containsMouse ? Theme.sapphire : Theme.lavender)
+                    color: active ? Theme.maroon : (wsArea.containsMouse ? Theme.peach : Theme.lavender)
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Btn {
                         id: wsArea
@@ -381,7 +381,7 @@ PanelWindow {
             Txt {
                 visible: bar.netKind !== ""
                 text: bar.netKind === "wifi" ? bar.wifiIcon : bar.nf(0xF0200) + " " + bar.netLabel
-                Btn { anchors.fill: parent; onClicked: bar.term("nmtui") }
+                Btn { anchors.fill: parent; onClicked: bar.term("wifitui") }
             }
             Txt {
                 text: (!bar.btAdapter || !bar.btAdapter.enabled) ? bar.nf(0xF00B2)
@@ -396,22 +396,27 @@ PanelWindow {
                     }
                 }
             }
-        }
-        Island {
+          }
+          // tray
+Island {
     visible: SystemTray.items.values.length > 0
     Repeater {
         model: SystemTray.items
         Item {
             id: trayItem
             required property SystemTrayItem modelData
+            property bool menuOpen: false
+            property real menuX: 0
+            property real menuY: 0
             implicitWidth: 20
             implicitHeight: 20
 
-            function toggleMenu() {
-                if (menuPopup.visible) { menuPopup.visible = false; return }
+            function openMenu() {
                 const p = trayItem.mapToItem(null, 0, 0)
-                menuPopup.anchor.rect = Qt.rect(p.x, p.y, trayItem.width, trayItem.height + 8)
-                menuPopup.visible = true
+                const sw = bar.screen.width
+                menuX = Math.max(8, Math.min(sw - 228, p.x + bar.margins.left + 10 - 110))
+                menuY = bar.margins.top + bar.height + 6
+                menuOpen = true
             }
 
             IconImage { anchors.fill: parent; source: trayItem.modelData.icon }
@@ -424,80 +429,87 @@ PanelWindow {
                 onClicked: (m) => {
                     const it = trayItem.modelData
                     if (m.button === Qt.MiddleButton) it.secondaryActivate()
-                    else if (m.button === Qt.RightButton || it.onlyMenu) { if (it.hasMenu) trayItem.toggleMenu() }
+                    else if (m.button === Qt.RightButton || it.onlyMenu) { if (it.hasMenu) trayItem.openMenu() }
                     else it.activate()
                 }
             }
 
-            HyprlandFocusGrab {
-                windows: [menuPopup]
-                active: menuPopup.visible
-                onCleared: menuPopup.visible = false
-            }
+            LazyLoader {
+                active: trayItem.menuOpen
 
-            PopupWindow {
-                id: menuPopup
-                anchor.window: bar
-                anchor.edges: Edges.Bottom | Edges.Left
-                anchor.gravity: Edges.Bottom | Edges.Right
-                anchor.adjustment: PopupAdjustment.Slide
-                color: "transparent"
-                implicitWidth: 220
-                implicitHeight: menuBox.implicitHeight
+                PanelWindow {
+                    screen: bar.screen
+                    anchors { top: true; bottom: true; left: true; right: true }
+                    color: "transparent"
+                    exclusionMode: ExclusionMode.Ignore
+                    WlrLayershell.layer: WlrLayer.Overlay
 
-                Rectangle {
-                    id: menuBox
-                    anchors.fill: parent
-                    implicitHeight: col.implicitHeight + 12
-                    radius: 12
-                    color: Qt.rgba(Theme.walBg.r, Theme.walBg.g, Theme.walBg.b, 0.95)
-                    border.color: Theme.surface1
-                    border.width: 1
+                    // клик в любом месте вне меню = закрыть
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.AllButtons
+                        onClicked: trayItem.menuOpen = false
+                    }
 
-                    ColumnLayout {
-                        id: col
-                        anchors { fill: parent; margins: 6 }
-                        spacing: 0
-                        Repeater {
-                            model: opener.children
-                            Rectangle {
-                                id: entry
-                                required property var modelData
-                                Layout.fillWidth: true
-                                implicitHeight: modelData.isSeparator ? 9 : 30
-                                radius: 8
-                                color: (!modelData.isSeparator && modelData.enabled && entryArea.containsMouse) ? Theme.surface1 : "transparent"
+                    Rectangle {
+                        x: trayItem.menuX
+                        y: trayItem.menuY
+                        width: 220
+                        implicitHeight: col.implicitHeight + 12
+                        height: implicitHeight
+                        radius: 12
+                        color: Qt.rgba(Theme.walBg.r, Theme.walBg.g, Theme.walBg.b, 0.95)
+                        border.color: Theme.surface1
+                        border.width: 1
 
+                        // чтобы клик по пустому месту внутри меню не закрывал его
+                        MouseArea { anchors.fill: parent }
+
+                        ColumnLayout {
+                            id: col
+                            anchors { fill: parent; margins: 6 }
+                            spacing: 0
+                            Repeater {
+                                model: opener.children
                                 Rectangle {
-                                    visible: entry.modelData.isSeparator
-                                    anchors.centerIn: parent
-                                    width: parent.width - 16
-                                    height: 1
-                                    color: Theme.inactive
-                                }
-                                RowLayout {
-                                    visible: !entry.modelData.isSeparator
-                                    anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
-                                    spacing: 8
-                                    IconImage {
-                                        visible: entry.modelData.icon !== ""
-                                        source: entry.modelData.icon
-                                        implicitSize: 16
+                                    id: entry
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    implicitHeight: modelData.isSeparator ? 9 : 30
+                                    radius: 8
+                                    color: (!modelData.isSeparator && modelData.enabled && entryArea.containsMouse) ? Theme.surface1 : "transparent"
+
+                                    Rectangle {
+                                        visible: entry.modelData.isSeparator
+                                        anchors.centerIn: parent
+                                        width: parent.width - 16
+                                        height: 1
+                                        color: Theme.inactive
                                     }
-                                    Txt {
-                                        Layout.fillWidth: true
-                                        text: entry.modelData.text
-                                        font.pixelSize: 14
-                                        elide: Text.ElideRight
-                                        opacity: entry.modelData.enabled ? 1 : 0.4
+                                    RowLayout {
+                                        visible: !entry.modelData.isSeparator
+                                        anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+                                        spacing: 8
+                                        IconImage {
+                                            visible: entry.modelData.icon !== ""
+                                            source: entry.modelData.icon
+                                            implicitSize: 16
+                                        }
+                                        Txt {
+                                            Layout.fillWidth: true
+                                            text: entry.modelData.text
+                                            font.pixelSize: 14
+                                            elide: Text.ElideRight
+                                            opacity: entry.modelData.enabled ? 1 : 0.4
+                                        }
                                     }
-                                }
-                                Btn {
-                                    id: entryArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    enabled: !entry.modelData.isSeparator && entry.modelData.enabled
-                                    onClicked: { entry.modelData.triggered(); menuPopup.visible = false }
+                                    Btn {
+                                        id: entryArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        enabled: !entry.modelData.isSeparator && entry.modelData.enabled
+                                        onClicked: { entry.modelData.triggered(); trayItem.menuOpen = false }
+                                    }
                                 }
                             }
                         }
