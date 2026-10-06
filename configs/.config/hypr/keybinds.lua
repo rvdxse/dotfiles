@@ -138,7 +138,7 @@ bind("XF86AudioMicMute", "Mute microphone", exec("pamixer --default-source -t"),
 bind("XF86MonBrightnessUp", "Brightness up", exec("swayosd-client --brightness raise"), held)
 bind("XF86MonBrightnessDown", "Brightness down", exec("swayosd-client --brightness lower"), held)
 
-bind("XF86AudioNext", "Media: next", exec("playerctl next"), locked)
-bind("XF86AudioPrev", "Media: previous", exec("playerctl previous"), locked)
-bind("XF86AudioPlay", "Media: play/pause", exec("playerctl play-pause"), locked)
-bind("XF86AudioPause", "Media: play/pause", exec("playerctl play-pause"), locked)
+bind("XF86AudioNext", "Media: next", exec("swayosd-client --playerctl next"), locked)
+bind("XF86AudioPrev", "Media: previous", exec("swayosd-client --playerctl prev"), locked)
+bind("XF86AudioPlay", "Media: play/pause", exec("swayosd-client --playerctl play-pause"), locked)
+bind("XF86AudioPause", "Media: play/pause", exec("swayosd-client --playerctl play-pause"), locked)
