@@ -36,7 +36,7 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("swaync")
 	hl.exec_cmd("hyprctl setcursor Bibata-Modern-Ice 24")
 	hl.exec_cmd("swayosd-server")
-	hl.exec_cmd("voxtype -q daemon")
+	--hl.exec_cmd("voxtype -q daemon")
 	--	hl.exec_cmd(
 	--		"gpu-screen-recorder -w screen -f 60 -a default_output -a 'default_output|default_input' -c mp4 -r 120 -o '/home/rvdxse/Videos'"
 	--	)

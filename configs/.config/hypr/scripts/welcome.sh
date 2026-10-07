@@ -1,16 +1,21 @@
 #!/bin/bash
 
+for _ in $(seq 1 20); do
+  pgrep -x awww-daemon >/dev/null && pgrep -x swaync >/dev/null && break
+  sleep 0.5
+done
+
 python ~/.local/bin/wallpaper_change.py ~/Pictures/Wallpapers/shaded_landscape.jpg
-notify-send "Aurora is ready ✨" \
+notify-send -u normal -t 10000 "Aurora is ready ✨" \
   "Your system has been configured successfully.
 
-Press Super + Space to launch apps.
-Press Super + Return to open a terminal.
+Press <b>Super + Space</b> to launch apps.
+Press <b>Super + /</b> for the keybinds cheatsheet.
 
 Enjoy your setup."
 
-CONFIG="$HOME/.config/hypr/autostart.conf"
+CONFIG="$HOME/.config/hypr/autostart.lua"
 
 if [ -f "$CONFIG" ]; then
-  sed -i "/exec-once = .*welcome.sh/s/^/# /" "$CONFIG"
+  sed -i '/^[[:space:]]*hl\.exec_cmd(.*welcome\.sh/s/^/-- /' "$CONFIG"
 fi
