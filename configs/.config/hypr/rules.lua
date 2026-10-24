@@ -73,17 +73,25 @@ hl.window_rule({
 })
 
 hl.window_rule({
-	name = "qemu_opacity",
+	name = "steam-opacity",
 	match = {
-		class = "qemu",
+		class = "^steam$",
 	},
-	opacity = "1",
+	opacity = "1.0 override",
 })
 
 hl.window_rule({
-	name = "youtube-opacity-override",
+	name = "youtube-opacity",
 	match = {
-		title = "(.*(YouTube).*)$",
+		title = "(?i).*YouTube.*",
+	},
+	opacity = "1.0 override",
+})
+
+hl.window_rule({
+	name = "qemu_opacity",
+	match = {
+		class = "qemu",
 	},
 	opacity = "1",
 })

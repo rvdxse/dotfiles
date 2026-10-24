@@ -22,6 +22,7 @@
 
 -- Autostart
 hl.on("hyprland.start", function()
+	hl.exec_cmd("hyprpm reload && hyprctl reload")
 	hl.exec_cmd("wl-clip-persist --clipboard regular")
 	--hl.exec_cmd("wl-paste --type text --watch cliphist store")
 	--hl.exec_cmd("wl-paste --type image --watch cliphist store")
@@ -34,8 +35,9 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("awww-daemon")
 	hl.exec_cmd("trash-empty 30")
 	hl.exec_cmd("swaync")
-	hl.exec_cmd("hyprctl setcursor Bibata-Modern-Ice 24")
+	--hl.exec_cmd("hyprctl setcursor Bibata-Modern-Ice 24")
 	hl.exec_cmd("swayosd-server")
+	hl.exec_cmd("~/.config/hypr/scripts/layout-osd.sh")
 	--hl.exec_cmd("voxtype -q daemon")
 	--	hl.exec_cmd(
 	--		"gpu-screen-recorder -w screen -f 60 -a default_output -a 'default_output|default_input' -c mp4 -r 120 -o '/home/rvdxse/Videos'"

@@ -23,8 +23,9 @@ hl.config({
 })
 
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
-
-hl.gesture({ fingers = 3, direction = "pinchin", action = "float", "tile" })
+hl.gesture({ fingers = 3, direction = "vertical", action = "scroll_move" })
+hl.gesture({ fingers = 3, direction = "pinch", action = "float" })
+hl.gesture({ fingers = 3, direction = "down", mods = "ALT", action = "close" })
 
 -- TODO: manual review: gesture = 3, "pinchout", "float", "float"
 

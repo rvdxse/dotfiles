@@ -41,12 +41,13 @@ hl.config({
 	},
 
 	decoration = {
-		rounding = 10,
+		rounding = 18,
+		rounding_power = 2.5,
 		active_opacity = 0.9,
 		inactive_opacity = 0.8,
 
 		shadow = {
-			enabled = true,
+			enabled = false,
 			range = 4,
 			render_power = 3,
 			color = 0xee1a1a1a, -- rgba(1a1a1aee)
@@ -57,11 +58,12 @@ hl.config({
 			size = 8,
 			passes = 3,
 			ignore_opacity = true,
-			vibrancy = 2,
+			vibrancy = 0.2,
 			brightness = 1.25,
 			contrast = 1.05,
 			noise = 0.015,
-			-- new_optimizations больше не в API 0.55, blur-пайплайн переписан — не переносил
+			new_optimizations = true,
+			vibrancy_darkness = 1,
 		},
 	},
 
@@ -93,7 +95,7 @@ hl.animation({
 })
 hl.animation({ leaf = "fade", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "fadeDim", enabled = true, speed = 6, bezier = "standard" })
-hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "standard" })
+hl.animation({ leaf = "border", enabled = true, speed = 3, bezier = "standard" })
 
 -------------------
 ---- LAYOUTS ------
@@ -103,6 +105,12 @@ hl.config({
 	dwindle = {
 		preserve_split = true,
 		smart_resizing = true, -- проверь актуальность опции в 0.55 wiki
+	},
+	scrolling = {
+		explicit_column_widths = "0.5, 1.0",
+		--follow_focus = false,
+		focus_fit_method = 1,
+		column_width = 0.5,
 	},
 	master = {
 		new_status = "master",
@@ -115,9 +123,11 @@ hl.config({
 
 hl.config({
 	misc = {
-		disable_splash_rendering = true, -- проверь актуальность имени опции
+		focus_on_activate = true,
+		disable_splash_rendering = true,
 		force_default_wallpaper = 0,
 		disable_hyprland_logo = true,
+		--exit_window_retains_fullscreen = 1,
 	},
 	ecosystem = {
 		no_update_news = true,

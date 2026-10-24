@@ -47,7 +47,7 @@ bind("SUPER + N", "Notes (Obsidian)", exec("obsidian"))
 bind("SUPER + M", "Telegram (AyuGram)", exec("AyuGram"))
 bind("SUPER + A", "Claude web app", exec("open-webapp https://claude.ai"))
 bind("SUPER + Y", "YouTube web app", exec("open-webapp https://youtube.com"))
-bind("SUPER + D", "lazydocker", exec(terminal .. " -e --class taskmgr lazydocker"))
+--bind("SUPER + D", "lazydocker", exec(terminal .. " -e --class taskmgr lazydocker"))
 bind("CONTROL + SHIFT + Escape", "Task manager (btop)", exec(terminal .. " --class taskmgr -e btop"))
 doc("ALT + Z", "Screen recorder")
 
@@ -75,9 +75,30 @@ for dir, key in pairs(dirs) do
 	register(mod .. " + CONTROL + " .. dir, hl.dsp.window.move({ direction = dir }))
 	register(mod .. " + CONTROL + " .. key, hl.dsp.window.move({ direction = dir }))
 end
+
 doc("SUPER + Arrows / H J K L", "Focus window in direction")
 doc("SUPER + CTRL + Arrows / H J K L", "Move window in direction")
 
+--[[ bind("SUPER + right", "Don't know bruh", hl.dsp.focus({ direction = "right" }))
+bind("SUPER + left", "Don't know bruh", hl.dsp.focus({ direction = "left" }))
+bind("SUPER + down", "skigibisma", hl.dsp.focus({ workspace = "r+1" }))
+bind("SUPER + up", "skigibisma", hl.dsp.focus({ workspace = "r-1" }))
+
+bind("SUPER + SHIFT + right", "barimba", hl.dsp.window.move({ direction = "right" }))
+bind("SUPER + SHIFT + left", "barimba", hl.dsp.window.move({ direction = "left" }))
+
+bind("SUPER + SHIFT + L", "barimba", hl.dsp.window.move({ direction = "right" }))
+bind("SUPER + SHIFT + H", "barimba", hl.dsp.window.move({ direction = "left" }))
+
+bind("SUPER + L", "Don't know bruh", hl.dsp.layout("focus right"))
+bind("SUPER + H", "Don't know bruh", hl.dsp.layout("focus left"))
+bind("SUPER + J", "skigibisma", hl.dsp.focus({ workspace = "r+1" }))
+bind("SUPER + K", "skigibisma", hl.dsp.focus({ workspace = "r-1" }))
+bind("SUPER + F", "skibigma", hl.dsp.layout("colresize +conf"))
+]]
+--
+
+bind("SUPER + SHIFT + CTRL + M", "Toggle tiling", exec("/home/rvdxse/.config/hypr/scripts/stack-toggle.sh"))
 -- Mouse
 bind("SUPER + mouse:272", "Drag window (left mouse button)", hl.dsp.window.drag(), { mouse = true })
 bind("SUPER + mouse:273", "Resize window (right mouse button)", hl.dsp.window.resize(), { mouse = true })
@@ -112,8 +133,8 @@ bind("SUPER + SHIFT + W", "Restart waybar", exec("pkill waybar; waybar"))
 bind("SUPER + SHIFT + N", "Notification center", exec("swaync-client -t -sw"))
 bind("SUPER + SHIFT + T", "Change wallpaper", exec(scripts .. "/wallpaper_change"))
 bind("SUPER + SHIFT + R", "Power menu (wlogout)", exec("pgrep -x wlogout && pkill -x wlogout || wlogout"))
-bind("SUPER + equal", "Zoom in", exec("hyprctl eval 'hl.config({ cursor = { zoom_factor = 2.0 } })'"))
-bind("SUPER + SHIFT + minus", "Zoom reset", exec("hyprctl eval 'hl.config({ cursor = { zoom_factor = 1.0 } })'"))
+bind("SUPER + equal", "Zoom in", hl.dsp.layout("colresize +0.1"))
+bind("SUPER + minus", "Zoom reset", hl.dsp.layout("colresize -0.1"))
 bind("SUPER + slash", "Show this cheatsheet", exec("keybinds-menu --menu"))
 
 -- Hotkeys lock: F1 enters an empty submap where only F1 works, F1 again leaves it
