@@ -17,21 +17,47 @@ Variants {
 PanelWindow {
     id: bar
     required property var modelData
+    WlrLayershell.layer: WlrLayer.Bottom
     screen: modelData
     anchors { top: true; left: true; right: true }
-    margins { top: 5; left: 5; right: 5 }
+    margins {
+      top: bar.solid ? 0 : 0
+      left: bar.solid ? 0 : 0
+      right: bar.solid ? 0 : 0
+    }
     implicitHeight: 44
     color: "transparent"
 
     // ───────────── helpers ─────────────
     function nf(cp) { return String.fromCodePoint(cp) }
+    function refreshSolid() { clientsProc.running = true }
     function term(...cmd) { Quickshell.execDetached(["kitty", "--class", "taskmgr", "-e", ...cmd]) }
 
-    // Если воркспейсы не переключаются (новый Lua-синтаксис Hyprland),
-    // замени тело на свою рабочую форму dispatch.
     function gotoWorkspace(id) {
         Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({ workspace = " + id + " })"])
+      }
+    function hypr(...cmds) {
+      Quickshell.execDetached(["sh", "-c", cmds.map(c => "hyprctl dispatch '" + c + "'").join(" && ")])
     }
+
+    function isMinimized(t) { return t.workspace?.name === "special:minimized" }
+
+    function minimizeWindow(t) {
+      hypr('hl.dsp.window.move({ workspace = "special:minimized", follow = false, window = "address:0x' + t.address + '" })')
+    }
+    function toggleWindow(t) {
+       const addr = "address:0x" + t.address
+        if (isMinimized(t)) {
+            const ws = Hyprland.focusedWorkspace?.id
+            hypr('hl.dsp.window.move({ workspace = ' + ws + ', follow = false, window = "' + addr + '" })',
+             'hl.dsp.focus({ window = "' + addr + '" })')
+    }   else if (t.activated) {
+        minimizeWindow(t)
+    }   else {
+        hypr('hl.dsp.focus({ window = "' + addr + '" })')
+    }
+}
+
     // function gotoWorkspace(id) { Hyprland.dispatch("workspace " + id) }
 
     // сюда можно вставить свои Nerd Font иконки воркспейсов из waybar
@@ -46,6 +72,14 @@ PanelWindow {
         verticalAlignment: Text.AlignVCenter
     }
 
+    Rectangle {
+      anchors.fill: parent
+      radius: bar.solid ? 0 : Theme.radius
+      Behavior on radius { NumberAnimation { duration: 200 } }
+      color: Theme.walBg
+      opacity: bar.solid ? 1 : 0
+      Behavior on opacity { NumberAnimation { duration: 200 } }
+    }
     // "остров" = блок модулей с полупрозрачным фоном
     component Island: Rectangle {
         default property alias content: row.data
@@ -70,6 +104,7 @@ PanelWindow {
     property string netLabel: ""
     property int netSignal: 0
     property bool clockAlt: false
+    property bool solid: false
     property bool inhibit: false
     property int lastPct: 100
 
@@ -77,7 +112,7 @@ PanelWindow {
     readonly property var player: {
         const list = Mpris.players.values.filter(p => !p.dbusName.includes("playerctld"));
         return list.find(p => p.isPlaying) ?? list[0] ?? null;
-    }
+      }
 
     // ───────────── звук ─────────────
     readonly property var sink: Pipewire.defaultAudioSink
@@ -147,6 +182,20 @@ PanelWindow {
     }
     Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: cpuProc.running = true }
     Timer { interval: 1500; running: true; onTriggered: cpuProc.running = true }
+
+
+    Process {
+    id: clientsProc
+    command: ["hyprctl", "clients", "-j"]
+    stdout: StdioCollector {
+        onStreamFinished: {
+            try {
+                const ws = Hyprland.monitorFor(bar.screen)?.activeWorkspace?.id
+                bar.solid = JSON.parse(text).some(c => c.mapped && c.workspace.id === ws && c.fullscreen > 0 &&  c.floating === true)
+            } catch (e) {}
+        }
+    }
+  }
 
     // ───────────── updates (твой скрипт из waybar) ─────────────
     Process {
@@ -280,7 +329,9 @@ PanelWindow {
                 }
             }
         }
-    }
+      }
+
+
 
     // ───────────── ПРАВАЯ часть ─────────────
     RowLayout {
@@ -381,7 +432,7 @@ PanelWindow {
             Txt {
                 visible: bar.netKind !== ""
                 text: bar.netKind === "wifi" ? bar.wifiIcon : bar.nf(0xF0200) + " " + bar.netLabel
-                Btn { anchors.fill: parent; onClicked: bar.term("wifitui") }
+                Btn { anchors.fill: parent; onClicked: bar.term("nmtui") }
             }
             Txt {
                 text: (!bar.btAdapter || !bar.btAdapter.enabled) ? bar.nf(0xF00B2)
@@ -538,6 +589,14 @@ Island {
                     onClicked: Quickshell.execDetached(["wlogout"])
                 }
             }
-        }
+          }
+        Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+        if (["fullscreen", "activewindowv2", "workspacev2", "focusedmon",
+             "openwindow", "closewindow", "movewindowv2"].includes(event.name))
+            bar.refreshSolid()
+    }
+}
     }
 }}
